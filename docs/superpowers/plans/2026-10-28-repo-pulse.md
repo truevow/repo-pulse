@@ -6,14 +6,14 @@
 
 **Architecture:** Three NestJS modules behind one HTTP API: `ingestion` (GitHub GraphQL to Postgres via background sync jobs), `signals` (SQL aggregates, pure-function detectors, insights endpoint) and `synthesis` (a bounded Anthropic tool-use loop over four read-only tools, followed by deterministic grounding and calibration). Read endpoints only touch Postgres; the model is called only on a narrative cache miss.
 
-**Tech Stack:** Node 22, TypeScript 5.9, NestJS 12 (Express), Prisma 6.19 + Postgres 16, Zod 4, `@anthropic-ai/sdk` 1.3 (beta tool runner + structured outputs), nestjs-pino, @nestjs/swagger, @nestjs/throttler, Jest 30 + supertest, Docker Compose, GitHub Actions.
+**Tech Stack:** Node 22, TypeScript 5.9, NestJS 11 (Express), Prisma 6.19 + Postgres 16, Zod 4, `@anthropic-ai/sdk` 1.3 (beta tool runner + structured outputs), nestjs-pino, @nestjs/swagger, @nestjs/throttler, Jest 30 + supertest, Docker Compose, GitHub Actions.
 
 **Spec:** `docs/superpowers/specs/2026-10-28-repo-pulse-design.md`
 
 ## Global Constraints
 
 - Project root is `/Users/adrianh.dao/Documents/projects/tempo-home-assessment`; it becomes the git repo. `.env` already exists there with `ANTHROPIC_API_KEY` and must be gitignored before the first commit. Never print, log or commit token values.
-- Pin: `typescript@^5.9`, `@nestjs/*@^12`, `prisma@^6.19` and `@prisma/client@^6.19` (not 7 or 8), `zod@^4`, `@anthropic-ai/sdk@^1.3`. Node `>=22` in `package.json#engines`.
+- Pin: `typescript@^5.9`, `@nestjs/*@^11` (Nest 12 is ESM-only with a TS 6 toolchain; ruled out during execution), `prisma@^6.19` and `@prisma/client@^6.19` (not 7 or 8), `zod@^4`, `@anthropic-ai/sdk@^1.3`. Node `>=22` in `package.json#engines`.
 - Default model `claude-opus-5-5`, default effort `medium`, no `thinking` parameter, `fallbacks: "default"` with beta `server-side-fallback-2026-07-01`, never `tool_choice: any/tool`, `max_iterations: 6`, `max_tokens: 16000`.
 - Env var names: `DATABASE_URL`, `GITHUB_TOKEN`, `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`, `ANTHROPIC_EFFORT`, `PORT`, `SYNC_MAX_WEEKS` (26), `NARRATIVE_RATE_LIMIT_PER_MIN` (10), `CORS_ORIGIN`, `LOG_LEVEL`. Tests use `DATABASE_URL_TEST`.
 - API base `/api/v1`; errors are RFC 9457 `application/problem+json` with `requestId`; OpenAPI at `/docs`.
