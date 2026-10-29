@@ -146,6 +146,8 @@ Everything downstream treats it as "no data":
 - `get_bucket_examples` refuses it with `{"error": "bucket_not_synced"}`:
   the only rows there are stragglers fetched for a later window (a PR
   created before coverage but updated inside it);
+- `get_contributor_activity` returns its row with `covered: false` and null
+  counts, and records nothing for it;
 - `compare_windows` skips it, as it skips partial buckets;
 - the fact ledger seeds nothing from it;
 - the demo page marks its column header with `!`.

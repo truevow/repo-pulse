@@ -131,9 +131,11 @@ curl -s http://localhost:3000/api/v1/repos/anomalyco/opencode/narrative
   the demo page polls them.
 - **Rate limit.** Before each query, when fewer than 100 points remain, the
   client sleeps until the window's `resetAt`. A rate-limited response
-  (GraphQL `RATE_LIMITED`, or HTTP 403/429 with no points left) sleeps until
-  the known reset plus 1 s, capped at an hour, unless `retry-after` says
-  otherwise; other transient failures back off exponentially with jitter.
+  with no points left (GraphQL `RATE_LIMITED` with `remaining` 0 or absent,
+  or HTTP 403/429 with `x-ratelimit-remaining: 0`) sleeps until the known
+  reset plus 1 s, capped at an hour, unless `retry-after` says otherwise. A
+  secondary limit with points left, and other transient failures, back off
+  exponentially with jitter.
   At most 5 attempts are made per query.
 - **Repeat requests.** A second POST while a job is queued or running returns
   that job with 200, whatever window it asks for.
@@ -393,8 +395,8 @@ empty value (for example `GITHUB_TOKEN=`) counts as unset.
 ## Testing
 
 ```bash
-npm test                 # unit tests: detectors, grounding, calibration, cache key, prompt, runner; no DB (176 tests)
-npm run test:e2e         # API and SQL against repo_pulse_test, with fake GitHub and fake model clients (116 tests)
+npm test                 # unit tests: detectors, grounding, calibration, cache key, prompt, runner; no DB (177 tests)
+npm run test:e2e         # API and SQL against repo_pulse_test, with fake GitHub and fake model clients (117 tests)
 npm run eval:detectors   # the deterministic detector suite only (35 tests)
 npm run eval -- --dry    # builds the six fixtures and runs the detectors; no model calls
 npm run eval             # 6 planted-cause cases x 3 runs against the real API

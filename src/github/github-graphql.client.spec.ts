@@ -112,6 +112,33 @@ describe('GitHubGraphqlClient', () => {
     ]);
     await far.client.query('q', {});
     expect(far.sleep.mock.calls.map((c) => c[0])).toEqual([3_600_000]);
+
+    // No rateLimit in the body: the x-ratelimit-reset header gives the reset.
+    const headerOnly = setup([
+      new Response(
+        JSON.stringify({ errors: [{ type: 'RATE_LIMITED', message: 'x' }] }),
+        {
+          status: 200,
+          headers: { 'x-ratelimit-reset': String(NOW.getTime() / 1000 + 60) },
+        },
+      ),
+      res({ data: { rateLimit: rl(4000) } }),
+    ]);
+    await headerOnly.client.query('q', {});
+    expect(headerOnly.sleep.mock.calls.map((c) => c[0])).toEqual([61_000]);
+  });
+
+  it('backs off exponentially on a RATE_LIMITED secondary limit with points left', async () => {
+    const resetAt = new Date(NOW.getTime() + 3_000_000).toISOString();
+    const { client, sleep } = setup([
+      res({
+        data: { rateLimit: rl(500, resetAt) },
+        errors: [{ type: 'RATE_LIMITED', message: 'secondary limit' }],
+      }),
+      res({ data: { rateLimit: rl(4000) } }),
+    ]);
+    await client.query('q', {});
+    expect(sleep.mock.calls.map((c) => c[0])).toEqual([500]);
   });
 
   it('sleeps until x-ratelimit-reset on a 403 or 429 with no points left', async () => {

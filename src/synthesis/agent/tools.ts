@@ -15,7 +15,7 @@ export const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
   get_bucket_examples:
     'Return the pull requests, issues or commits that contributed most to a metric in one bucket, with titles, authors and the relevant duration or count. Use it to see what was behind a spike before naming a cause.',
   get_contributor_activity:
-    "Return one contributor's per-bucket pull requests opened and merged, reviews given and commits. Use it to check whether a person explains a change in a metric.",
+    "Return one contributor's per-bucket pull requests opened and merged, reviews given and commits, with a covered flag per bucket (false: outside the synced range, counts are null). Use it to check whether a person explains a change in a metric.",
   compare_windows:
     'Compare one metric across two sub-windows using complete, synced buckets only, returning median, mean, total and bucket count for each and the change in median. Use it to quantify a before and after claim.',
 };
@@ -157,15 +157,32 @@ function contributorActivity(ctx: ToolContext) {
       if (login === null) {
         return json({ error: 'unknown_login', login: requested });
       }
-      const rows = await ctx.metrics.contributorActivity({
-        ...ctx.query,
-        login,
-      });
+      const synced = new Set(
+        ctx.insights.buckets.filter((b) => b.covered).map((b) => b.key),
+      );
+      // Unsynced buckets come back as SQL zeros: null them, record nothing.
+      const rows = (
+        await ctx.metrics.contributorActivity({ ...ctx.query, login })
+      ).map((row) =>
+        synced.has(row.bucket)
+          ? { ...row, covered: true }
+          : {
+              bucket: row.bucket,
+              covered: false,
+              prs_opened: null,
+              prs_merged: null,
+              reviews_given: null,
+              commits: null,
+            },
+      );
       for (const row of rows) {
+        if (!row.covered) continue;
         for (const metric of ACTIVITY_METRICS) {
+          const value = row[metric];
+          if (value === null) continue;
           ctx.ledger.record(
             { metric, bucket: row.bucket, entity: login },
-            row[metric],
+            value,
             'count',
           );
         }

@@ -163,7 +163,9 @@ describe('agent tools (e2e)', () => {
   it('get_contributor_activity returns rows and records every cell', async () => {
     const t = tool('get_contributor_activity');
     const res = JSON.parse(await t.run(t.parse({ login: 'alice' })));
-    expect(res.rows).toEqual(EXPECTED_ALICE_ACTIVITY);
+    expect(res.rows).toEqual(
+      EXPECTED_ALICE_ACTIVITY.map((r) => ({ ...r, covered: true })),
+    );
     expect(
       ctx.ledger.lookup({
         metric: 'reviews_given',
@@ -181,7 +183,9 @@ describe('agent tools (e2e)', () => {
     const t = tool('get_contributor_activity');
     const res = JSON.parse(await t.run(t.parse({ login: 'ALICE' })));
     expect(res.login).toBe('alice');
-    expect(res.rows).toEqual(EXPECTED_ALICE_ACTIVITY);
+    expect(res.rows).toEqual(
+      EXPECTED_ALICE_ACTIVITY.map((r) => ({ ...r, covered: true })),
+    );
   });
 
   it('get_contributor_activity reports an unknown login and records nothing', async () => {
@@ -255,6 +259,42 @@ describe('agent tools (e2e)', () => {
       );
       expect(res).toEqual({ error: 'bucket_not_synced', bucket: EARLY });
       expect(wide.ledger.size).toBe(before);
+    });
+
+    it('get_contributor_activity nulls uncovered buckets and records nothing for them', async () => {
+      const t = wideTool('get_contributor_activity');
+      const res = JSON.parse(await t.run(t.parse({ login: 'alice' })));
+      expect(res.rows).toHaveLength(8);
+      for (const row of res.rows.slice(0, 4)) {
+        expect(row).toEqual({
+          bucket: row.bucket,
+          covered: false,
+          prs_opened: null,
+          prs_merged: null,
+          reviews_given: null,
+          commits: null,
+        });
+        for (const metric of [
+          'prs_opened',
+          'prs_merged',
+          'reviews_given',
+          'commits',
+        ]) {
+          expect(
+            wide.ledger.lookup({ metric, bucket: row.bucket, entity: 'alice' }),
+          ).toBeUndefined();
+        }
+      }
+      expect(res.rows.slice(4)).toEqual(
+        EXPECTED_ALICE_ACTIVITY.map((r) => ({ ...r, covered: true })),
+      );
+      expect(
+        wide.ledger.lookup({
+          metric: 'reviews_given',
+          bucket: W1,
+          entity: 'alice',
+        })?.value,
+      ).toBe(3);
     });
 
     it('compare_windows excludes uncovered buckets', async () => {

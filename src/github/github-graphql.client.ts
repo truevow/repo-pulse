@@ -157,22 +157,26 @@ export class GitHubGraphqlClient implements GitHubClient {
 
   /**
    * A rate-limited attempt: honour `retry-after`; else, when no points are
-   * left, wait for the known reset; else fall back to exponential backoff.
+   * left, wait for the known reset; else (a secondary limit with points
+   * left) fall back to exponential backoff. `graphql` carries the body's
+   * rateLimit for a GraphQL RATE_LIMITED error; a missing `remaining` there
+   * counts as exhausted.
    */
   private rateLimited(
     reason: string,
     status: number,
     response: Response,
-    resetAt?: string,
+    graphql?: { rateLimit?: RateLimit },
   ): Retryable {
     const retryAfter = this.retryAfterMs(response);
     if (retryAfter !== undefined)
       return new Retryable(reason, status, retryAfter);
+    const remaining = graphql?.rateLimit?.remaining;
     const exhausted =
-      resetAt !== undefined ||
-      response.headers.get('x-ratelimit-remaining') === '0';
+      response.headers.get('x-ratelimit-remaining') === '0' ||
+      (graphql !== undefined && (remaining === undefined || remaining === 0));
     const untilReset = exhausted
-      ? this.resetWaitMs(response, resetAt)
+      ? this.resetWaitMs(response, graphql?.rateLimit?.resetAt)
       : undefined;
     return untilReset === undefined
       ? new Retryable(reason, status)
@@ -213,7 +217,9 @@ export class GitHubGraphqlClient implements GitHubClient {
       return { value: body.data as T };
     }
     if (errors.some((e) => e.type === 'RATE_LIMITED')) {
-      return this.rateLimited('rate limited', status, response, rl?.resetAt);
+      return this.rateLimited('rate limited', status, response, {
+        rateLimit: rl,
+      });
     }
     if (errors.every((e) => e.type === 'NOT_FOUND')) {
       throw new GitHubError('not_found', 'GitHub resource not found', status);
