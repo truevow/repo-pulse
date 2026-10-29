@@ -109,7 +109,9 @@ function resolveBuckets(
 ): ResolvedBucket[] {
   const byKey = new Map(rows.map((r) => [r.bucket, r]));
   return specs.map((spec) => {
-    const row = byKey.get(spec.key);
+    // An unsynced bucket has no data: its SQL zeros are not real zeros.
+    const covered = isCoveredBucket(spec);
+    const row = covered ? byKey.get(spec.key) : undefined;
     const metrics = Object.fromEntries(
       METRIC_NAMES.map((m) => [
         m,
@@ -120,7 +122,7 @@ function resolveBuckets(
       spec,
       metrics,
       topReviewer: row?.top_reviewer ?? null,
-      covered: isCoveredBucket(spec),
+      covered,
     };
   });
 }
@@ -172,6 +174,7 @@ function toResponseBucket(b: ResolvedBucket): InsightsBucket {
     start: b.spec.start.toISOString(),
     end: b.spec.end.toISOString(),
     partial: b.spec.partial,
+    covered: b.covered,
     metrics: b.metrics,
   };
 }

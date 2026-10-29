@@ -134,6 +134,7 @@ describe('Insights (e2e)', () => {
         start: iso(W1),
         end: iso(W2),
         partial: false,
+        covered: true,
       });
       expect(body.buckets.map((b) => b.metrics)).toEqual(
         EXPECTED_WEEKS.map(metricsOf),
@@ -167,7 +168,17 @@ describe('Insights (e2e)', () => {
       });
       expect(body.buckets).toHaveLength(8);
       expectEveryMetricKey(body);
-      // Buckets before coverage hold no data and must not drive detectors.
+      // Buckets before coverage were never synced: flagged, every metric
+      // null (not a real zero), and they must not drive detectors.
+      for (const b of body.buckets.slice(0, 4)) {
+        expect(b.covered).toBe(false);
+        expect(b.partial).toBe(false);
+        for (const m of METRIC_NAMES) expect(b.metrics[m]).toBeNull();
+      }
+      expect(body.buckets.slice(4).every((b) => b.covered)).toBe(true);
+      expect(body.buckets.slice(4).map((b) => b.metrics)).toEqual(
+        EXPECTED_WEEKS.map(metricsOf),
+      );
       const uncovered = body.buckets.slice(0, 4).map((b) => b.key);
       expect(body.signals.filter((s) => uncovered.includes(s.bucket))).toEqual(
         [],

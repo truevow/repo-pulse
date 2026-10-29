@@ -2,7 +2,8 @@ import type { InsightsResponse } from '../../signals/insights.types';
 import { METRIC_NAMES, type MetricName } from '../../signals/metric-names';
 import type { Signal } from '../../signals/signal.types';
 
-const LEADERBOARD_LIMIT = 10;
+/** Rows per leaderboard shown to the model; the ledger seeds the same rows. */
+export const LEADERBOARD_LIMIT = 10;
 
 /** One line per metric (spec section 6). */
 export const METRIC_DEFINITIONS: Record<MetricName, string> = {
@@ -74,8 +75,9 @@ function metricsCsv(insights: InsightsResponse): string[] {
     csv(['bucket', ...METRIC_NAMES]),
     ...insights.buckets.map((b) =>
       csv([
-        b.partial ? `${b.key}*` : b.key,
-        ...METRIC_NAMES.map((m) => cell(b.metrics[m])),
+        `${b.key}${b.partial ? '*' : ''}${b.covered ? '' : '!'}`,
+        // An unsynced bucket has no data, whatever its cells hold.
+        ...METRIC_NAMES.map((m) => (b.covered ? cell(b.metrics[m]) : '-')),
       ]),
     ),
   ];
@@ -121,7 +123,7 @@ export function buildUserMessage(insights: InsightsResponse): string {
     `synced from ${c.from ?? '-'} to ${c.to ?? '-'}, window partially covered: ${c.partial}, last synced ${c.lastSyncedAt ?? '-'}`,
     '',
     'METRICS (CSV)',
-    'One row per bucket keyed by its start date; * marks a partial bucket (not part of the key); - means no value.',
+    'One row per bucket keyed by its start date; * marks a partial bucket and ! marks a bucket outside the synced range (no data, every value -); neither marker is part of the key; - means no value.',
     ...metricsCsv(insights),
     '',
     `LEADERBOARDS (whole window, top ${LEADERBOARD_LIMIT})`,

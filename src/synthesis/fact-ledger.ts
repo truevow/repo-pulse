@@ -4,6 +4,7 @@ import {
   METRIC_UNITS,
   type FactUnit,
 } from '../signals/metric-names';
+import { LEADERBOARD_LIMIT } from './prompts/user-message';
 
 export interface FactKey {
   metric: string;
@@ -51,6 +52,8 @@ export function seedLedgerFromInsights(
   insights: InsightsResponse,
 ): void {
   for (const b of insights.buckets) {
+    // Unsynced buckets hold no data; nothing in them is a fact.
+    if (!b.covered) continue;
     for (const m of METRIC_NAMES) {
       const v = b.metrics[m];
       if (v !== null)
@@ -58,8 +61,10 @@ export function seedLedgerFromInsights(
     }
   }
 
+  // Only the rows the prompt shows (top LEADERBOARD_LIMIT of each board).
+  const top = <T>(rows: T[]): T[] => rows.slice(0, LEADERBOARD_LIMIT);
   const { contributors, reviewers, mergers } = insights.leaderboards;
-  for (const c of contributors) {
+  for (const c of top(contributors)) {
     ledger.record(
       { metric: 'merged_prs', entity: c.login },
       c.mergedPrs,
@@ -72,7 +77,7 @@ export function seedLedgerFromInsights(
       'lines',
     );
   }
-  for (const r of reviewers) {
+  for (const r of top(reviewers)) {
     ledger.record({ metric: 'reviews', entity: r.login }, r.reviews, 'count');
     ledger.record(
       { metric: 'approvals', entity: r.login },
@@ -80,7 +85,7 @@ export function seedLedgerFromInsights(
       'count',
     );
   }
-  for (const m of mergers) {
+  for (const m of top(mergers)) {
     ledger.record(
       { metric: 'prs_merged_by', entity: m.login },
       m.prsMerged,

@@ -44,6 +44,21 @@ describe('buildUserMessage', () => {
     expect(cells[1 + METRIC_NAMES.indexOf('bus_factor_50')]).toBe('-');
   });
 
+  it('renders a bucket outside the synced range with ! and - in every cell', () => {
+    const msg = buildUserMessage({
+      ...INSIGHTS_FIXTURE,
+      buckets: INSIGHTS_FIXTURE.buckets.map((b, i) =>
+        i === 0 ? { ...b, covered: false } : b,
+      ),
+    });
+    const lines = msg.split('\n');
+    const header = lines.indexOf(`bucket,${METRIC_NAMES.join(',')}`);
+    const [w1, w2] = lines.slice(header + 1, header + 3);
+    expect(w1).toBe(['2026-08-31!', ...METRIC_NAMES.map(() => '-')].join(','));
+    expect(w2.startsWith('2026-09-07,')).toBe(true);
+    expect(msg).toContain('! marks a bucket outside the synced range');
+  });
+
   it('includes signal ids and examples as JSON, and leaderboards with ledger names', () => {
     const msg = buildUserMessage(INSIGHTS_FIXTURE);
     expect(msg).toContain(`"id": "${OUTLIER_SIGNAL.id}"`);

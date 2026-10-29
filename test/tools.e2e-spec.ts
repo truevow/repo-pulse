@@ -183,6 +183,88 @@ describe('agent tools (e2e)', () => {
     expect(() => t.parse({ login: 'renovate[bot]' })).not.toThrow();
   });
 
+  describe('with a window reaching before coverage', () => {
+    const EARLY = '2026-08-10';
+    let wide: ToolContext;
+
+    beforeAll(async () => {
+      const insights = await app.get(InsightsService).getInsights(OWNER, REPO, {
+        from: EARLY,
+        to: W5,
+        bucket: 'week',
+        includeBots: false,
+      });
+      wide = {
+        ...ctx,
+        insights,
+        query: {
+          ...ctx.query,
+          window: {
+            from: new Date(`${EARLY}T00:00:00Z`),
+            to: METRICS_WINDOW.to,
+          },
+        },
+        ledger: new FactLedger(),
+      };
+    });
+
+    const wideTool = (name: string) => {
+      const t = buildTools(wide).find((x) => x.name === name);
+      if (!t) throw new Error(`no tool ${name}`);
+      return t as unknown as {
+        parse(input: unknown): unknown;
+        run(input: unknown): Promise<string>;
+      };
+    };
+
+    it('get_metric_series flags uncovered buckets and records nothing for them', async () => {
+      const t = wideTool('get_metric_series');
+      const res = JSON.parse(await t.run(t.parse({ metric: 'commits' })));
+      const early = res.points.slice(0, 4);
+      for (const p of early) {
+        expect(p).toMatchObject({ value: null, covered: false });
+        expect(
+          wide.ledger.lookup({ metric: 'commits', bucket: p.bucket }),
+        ).toBeUndefined();
+      }
+      expect(
+        res.points.slice(4).every((p: { covered: boolean }) => p.covered),
+      ).toBe(true);
+    });
+
+    it('get_bucket_examples refuses an uncovered bucket and records nothing', async () => {
+      const t = wideTool('get_bucket_examples');
+      const before = wide.ledger.size;
+      const res = JSON.parse(
+        await t.run(t.parse({ metric: 'commits', bucket: EARLY, limit: 3 })),
+      );
+      expect(res).toEqual({ error: 'bucket_not_synced', bucket: EARLY });
+      expect(wide.ledger.size).toBe(before);
+    });
+
+    it('compare_windows excludes uncovered buckets', async () => {
+      const t = wideTool('compare_windows');
+      const res = JSON.parse(
+        await t.run(
+          t.parse({
+            metric: 'commits',
+            a: { from: EARLY, to: W1 },
+            b: { from: W1, to: W5 },
+          }),
+        ),
+      );
+      expect(res.a).toEqual({ median: null, mean: null, total: null, n: 0 });
+      expect(res.b.n).toBe(4);
+      expect(res.b.total).toBe(
+        EXPECTED_WEEKS.reduce((sum, w) => sum + (w.commits as number), 0),
+      );
+      expect(res.delta_median).toBeNull();
+      expect(
+        wide.ledger.lookup({ metric: 'commits.n', bucket: `${EARLY}/${W1}` }),
+      ).toBeUndefined();
+    });
+  });
+
   it('compare_windows computes stats and records them', async () => {
     const t = tool('compare_windows');
     const out = await t.run(

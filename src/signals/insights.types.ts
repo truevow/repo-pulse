@@ -9,7 +9,13 @@ export interface InsightsBucket {
   key: string;
   start: string;
   end: string;
+  /** The bucket is cut short by the window edge. */
   partial: boolean;
+  /**
+   * The bucket's in-window span lies inside the synced range. When false the
+   * bucket was never synced and every metric is null, not a real zero.
+   */
+  covered: boolean;
   metrics: Record<MetricName, number | null>;
 }
 

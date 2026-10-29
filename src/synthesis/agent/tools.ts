@@ -11,13 +11,13 @@ import type { ToolContext, ToolName } from './tool-context';
 
 export const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
   get_metric_series:
-    'Return the full per-bucket series for one metric, with a partial flag per bucket. Use it to see the shape of a metric over the window before judging a signal; level-shift signals cite `<metric>.observed` for the recent median.',
+    'Return the full per-bucket series for one metric, with a partial flag per bucket and a covered flag (false: the bucket lies outside the synced range and has no data). Use it to see the shape of a metric over the window before judging a signal; level-shift signals cite `<metric>.observed` for the recent median.',
   get_bucket_examples:
     'Return the pull requests, issues or commits that contributed most to a metric in one bucket, with titles, authors and the relevant duration or count. Use it to see what was behind a spike before naming a cause.',
   get_contributor_activity:
     "Return one contributor's per-bucket pull requests opened and merged, reviews given and commits. Use it to check whether a person explains a change in a metric.",
   compare_windows:
-    'Compare one metric across two sub-windows using complete buckets only, returning median, mean, total and bucket count for each and the change in median. Use it to quantify a before and after claim.',
+    'Compare one metric across two sub-windows using complete, synced buckets only, returning median, mean, total and bucket count for each and the change in median. Use it to quantify a before and after claim.',
 };
 
 const MAX_EXAMPLES = 10;
@@ -43,7 +43,10 @@ function median(sorted: number[]): number {
 
 function windowStats(ctx: ToolContext, metric: MetricName, w: Win) {
   const values = ctx.insights.buckets
-    .filter((b) => !b.partial && day(b.start) >= w.from && day(b.end) <= w.to)
+    .filter(
+      (b) =>
+        !b.partial && b.covered && day(b.start) >= w.from && day(b.end) <= w.to,
+    )
     .map((b) => b.metrics[metric])
     .filter((v): v is number => v !== null)
     .sort((x, y) => x - y);
@@ -66,22 +69,25 @@ function metricSeries(ctx: ToolContext) {
     strict: true,
     run: ({ metric }) => {
       const unit = METRIC_UNITS[metric];
+      // Unsynced buckets carry null values and are never recorded as facts.
       const points = ctx.insights.buckets.map((b) => ({
         bucket: b.key,
-        value: b.metrics[metric],
+        value: b.covered ? b.metrics[metric] : null,
         partial: b.partial,
+        covered: b.covered,
       }));
       for (const p of points) {
-        if (p.value !== null)
+        if (p.covered && p.value !== null)
           ctx.ledger.record({ metric, bucket: p.bucket }, p.value, unit);
       }
-      const unavailable = points.every((p) => p.value === null);
-      return json({
-        metric,
-        unit,
-        points,
-        ...(unavailable && { note: 'unavailable for this repository' }),
-      });
+      const synced = points.filter((p) => p.covered);
+      const note =
+        synced.length === 0
+          ? 'no bucket in the window is synced'
+          : synced.every((p) => p.value === null)
+            ? 'unavailable for this repository'
+            : undefined;
+      return json({ metric, unit, points, ...(note && { note }) });
     },
   });
 }
@@ -106,6 +112,11 @@ function bucketExamples(ctx: ToolContext) {
           error: 'unknown_bucket',
           known: ctx.insights.buckets.map((b) => b.key),
         });
+      }
+      // Outside the synced range the database holds only stragglers (items
+      // fetched for a later window), which say nothing about this bucket.
+      if (!found.covered) {
+        return json({ error: 'bucket_not_synced', bucket });
       }
       const examples = await ctx.metrics.bucketExamples({
         ...ctx.query,

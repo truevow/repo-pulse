@@ -100,6 +100,7 @@ export const INSIGHTS_FIXTURE: InsightsResponse = {
       start: '2026-08-31T00:00:00.000Z',
       end: '2026-09-07T00:00:00.000Z',
       partial: false,
+      covered: true,
       metrics: metrics({
         prs_merged: 10,
         time_to_merge_p50_h: 20,
@@ -111,6 +112,7 @@ export const INSIGHTS_FIXTURE: InsightsResponse = {
       start: '2026-09-07T00:00:00.000Z',
       end: '2026-09-14T00:00:00.000Z',
       partial: false,
+      covered: true,
       metrics: metrics({
         prs_merged: 12,
         time_to_merge_p50_h: 100,

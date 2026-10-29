@@ -97,6 +97,47 @@ describe('seedLedgerFromInsights', () => {
     expect(ledger.size).toBe(17);
   });
 
+  it('never seeds facts from a bucket outside the synced range', () => {
+    const ledger = new FactLedger();
+    seedLedgerFromInsights(ledger, {
+      ...INSIGHTS_FIXTURE,
+      buckets: INSIGHTS_FIXTURE.buckets.map((b, i) =>
+        i === 0 ? { ...b, covered: false } : b,
+      ),
+      leaderboards: { contributors: [], reviewers: [], mergers: [] },
+      signals: [],
+    });
+    expect(
+      ledger.lookup({ metric: 'prs_merged', bucket: '2026-08-31' }),
+    ).toBeUndefined();
+    expect(
+      ledger.lookup({ metric: 'prs_merged', bucket: '2026-09-07' })?.value,
+    ).toBe(12);
+  });
+
+  it('seeds only the top 10 of each leaderboard, as the prompt shows', () => {
+    const ledger = new FactLedger();
+    const reviewers = Array.from({ length: 12 }, (_, i) => ({
+      login: `user${i}`,
+      reviews: 20 - i,
+      approvals: 0,
+    }));
+    seedLedgerFromInsights(ledger, {
+      ...INSIGHTS_FIXTURE,
+      buckets: [],
+      leaderboards: { contributors: [], reviewers, mergers: [] },
+      signals: [],
+    });
+    expect(ledger.lookup({ metric: 'reviews', entity: 'user9' })?.value).toBe(
+      11,
+    );
+    expect(
+      ledger.lookup({ metric: 'reviews', entity: 'user10' }),
+    ).toBeUndefined();
+    // reviews + approvals for 10 reviewers.
+    expect(ledger.size).toBe(20);
+  });
+
   it('always records a level shift under .observed, and the cell only when absent or equal', () => {
     const ledger = new FactLedger();
     seedLedgerFromInsights(ledger, {

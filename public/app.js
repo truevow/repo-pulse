@@ -321,8 +321,12 @@
   function renderTable(data) {
     const head = el('tr', {}, el('th', { scope: 'col', text: 'Metric' }), el('th', { scope: 'col', text: 'Trend' }));
     for (const b of data.buckets) {
-      const th = el('th', { scope: 'col', text: b.key + (b.partial ? '*' : '') });
-      if (b.partial) th.setAttribute('title', 'Partial bucket: the window or synced data does not cover all of it');
+      const uncovered = b.covered === false;
+      const th = el('th', { scope: 'col', text: b.key + (b.partial ? '*' : '') + (uncovered ? '!' : '') });
+      const notes = [];
+      if (b.partial) notes.push('Partial bucket: the window cuts it short');
+      if (uncovered) notes.push('Not synced: no data for this bucket, values show —');
+      if (notes.length) th.setAttribute('title', notes.join('. '));
       head.append(th);
     }
     const body = el('tbody');
@@ -335,11 +339,13 @@
       for (const v of values) row.append(el('td', { className: v === null ? 'num null' : 'num', text: fmt(v, unit) }));
       body.append(row);
     }
-    const partial = data.buckets.some((b) => b.partial);
+    const legend = [];
+    if (data.buckets.some((b) => b.partial)) legend.push('* partial bucket, cut short by the window.');
+    if (data.buckets.some((b) => b.covered === false)) legend.push('! outside the synced range: no data, not zero activity.');
     return el('figure', { className: 'metrics' },
       el('div', { className: 'table-scroll', tabindex: '0', 'aria-label': 'Metrics by bucket, scrollable' },
         el('table', {}, el('thead', {}, head), body)),
-      partial ? el('figcaption', { className: 'muted', text: '* partial bucket, not fully covered by the window or the synced data.' }) : null);
+      legend.length ? el('figcaption', { className: 'muted', text: legend.join(' ') }) : null);
   }
 
   function renderSignals(signals) {
