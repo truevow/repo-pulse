@@ -249,6 +249,8 @@ describe('Narrative (e2e)', () => {
 
     expect(a.status).toBe(200);
     expect(b.status).toBe(200);
+    expect((a.body as NarrativeResponse).cached).toBe(false);
+    expect((b.body as NarrativeResponse).cached).toBe(false);
     expect(fake.calls).toHaveLength(1);
     expect((a.body as NarrativeResponse).generatedAt).toBe(
       (b.body as NarrativeResponse).generatedAt,
@@ -441,7 +443,10 @@ describe('Narrative (e2e)', () => {
 
       expect(body.grounding.status).toBe('ok');
       expect(body.hypotheses[0].model_confidence).toBe(0.9);
-      expect(body.hypotheses[0].confidence).toBeLessThanOrEqual(0.5);
+      // No signal exists here, so the 0.5 no-signal cap applies first and
+      // partial_data changes nothing (see narrative.service.spec.ts for it).
+      expect(body.hypotheses[0].adjustments).toEqual(['no_signal_cited']);
+      expect(body.hypotheses[0].confidence).toBe(0.5);
       expect(fake.calls[0].user).toContain('pullRequests unavailable');
     });
 

@@ -21,6 +21,18 @@ export interface AnthropicModelRunnerOptions {
   client?: Anthropic;
 }
 
+/**
+ * The JSON schema only, without the helper's `parse`: given a `parse`, the SDK
+ * parses every final text block at `message_stop` whatever the stop reason and
+ * throws a plain AnthropicError (quoting model text) on a refusal, a
+ * truncation or a schema miss, before the stop reason can be inspected. This
+ * runner maps the stop reason first and parses itself; the service validates.
+ */
+const { type: FORMAT_TYPE, schema: FORMAT_SCHEMA } = betaZodOutputFormat(
+  SynthesisOutputSchema,
+);
+const OUTPUT_FORMAT = { type: FORMAT_TYPE, schema: FORMAT_SCHEMA };
+
 const DEFAULT_MAX_ITERATIONS = 6;
 const DEFAULT_MAX_TOKENS = 16_000;
 
@@ -60,7 +72,7 @@ export class AnthropicModelRunner implements ModelRunner {
       tools: req.tools,
       output_config: {
         effort: this.opts.effort,
-        format: betaZodOutputFormat(SynthesisOutputSchema),
+        format: OUTPUT_FORMAT,
       },
       betas: ['server-side-fallback-2026-07-01'],
       fallbacks: 'default',
@@ -77,13 +89,29 @@ export class AnthropicModelRunner implements ModelRunner {
     };
     let toolCalls = 0;
     let turns = 0;
-    for await (const stream of runner) {
-      const message = await stream.finalMessage();
-      turns += 1;
-      addUsage(usage, message);
-      toolCalls += message.content.filter((b) => b.type === 'tool_use').length;
+    let final: BetaMessage;
+    try {
+      for await (const stream of runner) {
+        const message = await stream.finalMessage();
+        turns += 1;
+        addUsage(usage, message);
+        toolCalls += message.content.filter(
+          (b) => b.type === 'tool_use',
+        ).length;
+      }
+      final = await runner.done();
+    } catch (err) {
+      // API errors keep their class for the service's mapping. Any other SDK
+      // error is a client-side stream or parse failure whose message may quote
+      // model text: drop it.
+      if (
+        err instanceof Anthropic.AnthropicError &&
+        !(err instanceof Anthropic.APIError)
+      ) {
+        throw new SynthesisFailedError('unparseable', 'model stream failed');
+      }
+      throw err;
     }
-    const final = await runner.done();
 
     switch (final.stop_reason) {
       case 'refusal':
@@ -106,10 +134,8 @@ export class AnthropicModelRunner implements ModelRunner {
   }
 }
 
-/** The SDK's parsed output when it has one, else the final text as JSON. */
+/** The final turn's text as JSON; the error never quotes the text. */
 function parseOutput(final: BetaMessage): unknown {
-  const parsed = (final as { parsed_output?: unknown }).parsed_output;
-  if (parsed !== undefined && parsed !== null) return parsed;
   const text = final.content
     .flatMap((b) => (b.type === 'text' ? [b.text] : []))
     .join('');

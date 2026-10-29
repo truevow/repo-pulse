@@ -10,22 +10,22 @@ import {
 import { NarrativeController } from './narrative.controller';
 import { NarrativeService } from './narrative.service';
 
+/** The real runner when an API key is configured, otherwise a 503 stand-in. */
+export function createModelRunner(env: Env): ModelRunner {
+  return env.ANTHROPIC_API_KEY
+    ? new AnthropicModelRunner({
+        apiKey: env.ANTHROPIC_API_KEY,
+        model: env.ANTHROPIC_MODEL,
+        effort: env.ANTHROPIC_EFFORT,
+      })
+    : new NotConfiguredModelRunner();
+}
+
 @Module({
   imports: [SignalsModule],
   controllers: [NarrativeController],
   providers: [
-    {
-      provide: MODEL_RUNNER,
-      inject: [ENV],
-      useFactory: (env: Env): ModelRunner =>
-        env.ANTHROPIC_API_KEY
-          ? new AnthropicModelRunner({
-              apiKey: env.ANTHROPIC_API_KEY,
-              model: env.ANTHROPIC_MODEL,
-              effort: env.ANTHROPIC_EFFORT,
-            })
-          : new NotConfiguredModelRunner(),
-    },
+    { provide: MODEL_RUNNER, inject: [ENV], useFactory: createModelRunner },
     NarrativeService,
   ],
 })

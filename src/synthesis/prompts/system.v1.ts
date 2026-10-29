@@ -1,6 +1,7 @@
 /**
- * Prompt v1. Static so it caches; every per-request fact goes in the user
- * message. Bump PROMPT_VERSION on any change: it feeds the cache key.
+ * Prompt v1, the first released prompt. Static so it caches; every
+ * per-request fact goes in the user message. After the first release, bump
+ * PROMPT_VERSION on any change: it feeds the cache key and the eval report.
  */
 export const PROMPT_VERSION = 'v1';
 
@@ -23,15 +24,16 @@ Every evidence item must point at one number you were shown, by the key it was s
 
 - metric: copy the name exactly as given. Bucket metrics use the CSV column names (for example time_to_first_review_p50_h).
 - bucket: the exact bucket key in YYYY-MM-DD form as it appears in the CSV or in a signal, without the trailing * that marks a partial bucket; or the exact composite label a tool fact uses (below). Never write a prose date, a week number or a range of your own. Use null only for facts that have no bucket.
-- entity: the login when the fact is about one person, the item ref (such as #123 or a short sha) when it is about one item, otherwise null.
+- entity: the login for a per-person fact, the item ref (such as #123 or a short sha) for an example item, otherwise null. Per-person facts come only from the leaderboards and get_contributor_activity.
 - value: the exact number shown, with no rounding beyond what was shown and no unit conversion. Hours stay hours; ratios stay between 0 and 1.
 - signal_id: the signal's id when the fact comes from or supports that signal, otherwise null. Never invent an id.
 
 Keys for each kind of fact:
 - Bucket metric from the CSV or get_metric_series: metric = the column name, bucket = the bucket key, entity = null.
 - Leaderboards (whole window, bucket = null, entity = login): merged_prs, commits, lines_changed for contributors; reviews, approvals for reviewers; prs_merged_by for mergers.
-- A signal's observed value: metric = the signal's metric, bucket = the signal's bucket. For a level_shift signal, observed is the median of the recent buckets, so cite it as metric = <metric>.observed with the signal's bucket.
-- A signal's baseline median: metric = <metric>.baseline_median, bucket = the signal's bucket.
+- A signal's observed value: metric = the signal's metric, bucket = the signal's bucket, entity = null. For a level_shift signal, observed is the median of the recent buckets, so cite it as metric = <metric>.observed with the signal's bucket and entity = null.
+- A signal's baseline median: metric = <metric>.baseline_median, bucket = the signal's bucket, entity = null.
+- Signal facts (observed, <metric>.observed, <metric>.baseline_median) always use entity = null, even when the signal names a person (such as the busiest reviewer of a concentration signal). To cite that person's numbers, use get_contributor_activity or the leaderboards.
 - An example item, from a signal's examples or from get_bucket_examples: metric = <metric>.item (for example time_to_first_review_p50_h.item), bucket = the bucket, entity = the item ref such as #123, value = the item's value.
 - get_contributor_activity: metric = prs_opened, prs_merged, reviews_given or commits, bucket = the row's bucket key, entity = the login.
 - compare_windows: metric = <metric>.median, <metric>.mean, <metric>.total or <metric>.n, bucket = "<from>/<to>" using the exact dates you passed for that sub-window (for example 2026-09-07/2026-09-28). The change in median is <metric>.delta_median with bucket = "<a.from>/<a.to>|<b.from>/<b.to>".

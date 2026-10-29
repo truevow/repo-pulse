@@ -13,6 +13,7 @@ import type { ToolContext } from './agent/tool-context';
 import { buildTools } from './agent/tools';
 import { narrativeCacheKey, signalsFingerprint } from './cache-key';
 import { calibrate } from './calibration';
+import { costUsd } from './cost';
 import { FactLedger, seedLedgerFromInsights } from './fact-ledger';
 import { groundOutput } from './grounding';
 import {
@@ -20,7 +21,6 @@ import {
   SynthesisFailedError,
   type ModelResult,
   type ModelRunner,
-  type ModelUsage,
 } from './model-runner';
 import type {
   NarrativeQuery,
@@ -30,24 +30,6 @@ import type {
 import { SynthesisOutputSchema, type SynthesisOutput } from './output.schema';
 import { PROMPT_VERSION, SYSTEM_PROMPT } from './prompts/system.v1';
 import { buildUserMessage } from './prompts/user-message';
-
-/** USD per million tokens (Claude Opus 5.5 list prices); an estimate under fallback. */
-const PRICE_PER_MTOK = {
-  input: 4,
-  output: 20,
-  cacheRead: 0.2,
-  cacheWrite: 5,
-};
-
-export function costUsd(u: ModelUsage): number {
-  const dollars =
-    (u.inputTokens * PRICE_PER_MTOK.input +
-      u.outputTokens * PRICE_PER_MTOK.output +
-      u.cacheReadTokens * PRICE_PER_MTOK.cacheRead +
-      u.cacheWriteTokens * PRICE_PER_MTOK.cacheWrite) /
-    1_000_000;
-  return Math.round(dollars * 1e6) / 1e6;
-}
 
 const RETRY_AFTER_S = '30';
 
@@ -87,28 +69,44 @@ function toProblem(err: unknown): unknown {
   return err;
 }
 
-/** 409 when there is nothing to reason about: no available entity, or no activity and no signals. */
+/**
+ * 409 when there is nothing to reason about: every entity is unavailable, or
+ * no bucket has a non-null, non-zero metric (counts are 0, not null, in empty
+ * buckets, so zero means no activity too).
+ */
 function assertHasData(insights: InsightsResponse): void {
   const allUnavailable = Object.values(insights.availability).every(
     (a) => a === 'unavailable',
   );
-  // Counts are 0 (not null) in empty buckets, so zero means no activity too.
   const anyActivity = insights.buckets.some((b) =>
     Object.values(b.metrics).some((v) => v !== null && v !== 0),
   );
-  if (allUnavailable || (!anyActivity && insights.signals.length === 0)) {
+  if (allUnavailable || !anyActivity) {
     throw new ProblemException({
       status: 409,
       type: 'no-signal-data',
       title: 'No signal data',
-      detail: 'The window has no activity or signals to reason about',
+      detail: 'The window has no activity to reason about',
     });
   }
 }
 
+const ZERO_USAGE: NarrativeUsage = {
+  inputTokens: 0,
+  outputTokens: 0,
+  cacheReadTokens: 0,
+  cacheWriteTokens: 0,
+  costUsd: 0,
+};
+
 @Injectable()
 export class NarrativeService {
-  private readonly inFlight = new Map<string, Promise<NarrativeResponse>>();
+  /**
+   * Model generations in flight, by cache key. Cache lookups are not
+   * deduplicated: a refresh must never join a lookup that may return a stored
+   * narrative, so only generations are shared.
+   */
+  private readonly generations = new Map<string, Promise<NarrativeResponse>>();
 
   constructor(
     private readonly insights: InsightsService,
@@ -127,6 +125,7 @@ export class NarrativeService {
     q: NarrativeQuery,
     requestId?: string,
   ): Promise<NarrativeResponse> {
+    const started = Date.now();
     const insights = await this.insights.getInsights(owner, repo, q);
     assertHasData(insights);
 
@@ -143,33 +142,31 @@ export class NarrativeService {
       effort: this.env.ANTHROPIC_EFFORT,
     });
 
-    // Concurrent identical requests share one generation (or one lookup).
-    const pending = this.inFlight.get(key);
-    if (pending) return pending;
-    const task = this.resolve(key, insights, q.refresh, requestId).finally(() =>
-      this.inFlight.delete(key),
-    );
-    this.inFlight.set(key, task);
-    return task;
-  }
-
-  private async resolve(
-    key: string,
-    insights: InsightsResponse,
-    refresh: boolean,
-    requestId?: string,
-  ): Promise<NarrativeResponse> {
-    if (!refresh) {
+    if (!q.refresh) {
       const hit = await this.prisma.narrative.findUnique({
         where: { cacheKey: key },
       });
       if (hit) {
         const stored = hit.result as unknown as NarrativeResponse;
-        this.logGeneration(requestId, { ...stored, cached: true });
+        this.logLine(requestId, stored, {
+          cached: true,
+          usage: ZERO_USAGE,
+          latencyMs: Date.now() - started,
+        });
         return { ...stored, cached: true };
       }
     }
-    return this.generate(key, insights, requestId);
+
+    // Concurrent identical requests share one generation. The check and the
+    // registration run in one synchronous step, so two misses cannot both
+    // start a model run.
+    const pending = this.generations.get(key);
+    if (pending) return pending;
+    const task = this.generate(key, insights, requestId).finally(() =>
+      this.generations.delete(key),
+    );
+    this.generations.set(key, task);
+    return task;
   }
 
   private async generate(
@@ -289,7 +286,7 @@ export class NarrativeService {
       update: { ...row, createdAt: new Date() },
     });
 
-    this.logGeneration(requestId, response);
+    this.logLine(requestId, response, response.meta);
     return response;
   }
 
@@ -308,22 +305,25 @@ export class NarrativeService {
   }
 
   /** Metadata only: never the prompt or the narrative text. */
-  private logGeneration(
+  private logLine(
     requestId: string | undefined,
     r: NarrativeResponse,
+    req: Pick<NarrativeResponse['meta'], 'usage' | 'latencyMs'> & {
+      cached?: boolean;
+    },
   ): void {
     this.logger.info(
       {
         requestId,
         owner: r.repository.owner,
         repo: r.repository.name,
-        cached: r.cached,
+        cached: req.cached ?? false,
         model: r.meta.model,
         promptVersion: r.meta.promptVersion,
-        usage: r.meta.usage,
-        toolCalls: r.meta.toolCalls,
-        turns: r.meta.turns,
-        latencyMs: r.meta.latencyMs,
+        usage: req.usage,
+        toolCalls: req.cached ? 0 : r.meta.toolCalls,
+        turns: req.cached ? 0 : r.meta.turns,
+        latencyMs: req.latencyMs,
         groundingStatus: r.grounding.status,
       },
       'narrative',
