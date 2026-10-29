@@ -8,14 +8,15 @@ needed:
 ```bash
 cp .env.example .env    # set ANTHROPIC_API_KEY for narratives
 docker compose up -d db && npm install && npm run db:migrate
-npm run demo:seed       # loads evalco/service-1, the latency_spike eval fixture
+npm run db:seed         # loads seed/dsh-desktop.json, a real snapshot of dataelement/dsh-desktop
 npm run start:dev       # then open http://localhost:3000/
 ```
 
 | Path | Command |
 |---|---|
-| Live sync (verified against a recorded fake only; see "Numbers verified") | Set `GITHUB_TOKEN`, then `POST /api/v1/repos/anomalyco/opencode/sync` |
-| Docker, with data loaded from the host (`seed/` is empty) | `docker compose up --build -d`, then `npm run demo:seed` on the host |
+| Synthetic fixture with a planted anomaly | `npm run demo:seed` (loads `evalco/service-1`, the `latency_spike` eval case) |
+| Live sync (run against api.github.com on 2026-10-29; see "Numbers verified") | Set `GITHUB_TOKEN`, then `POST /api/v1/repos/anomalyco/opencode/sync` |
+| Docker, self-contained | `docker compose up --build -d && docker compose exec app npm run db:seed` |
 | Tests | `npm test`, `npm run test:e2e`, `npm run eval -- --dry` (free) or `npm run eval` (about $0.75) |
 
 ## Architecture tour and main decisions
@@ -91,6 +92,10 @@ loop.
 7. **Bedrock.** A Bedrock client behind the `ModelRunner` interface, which is
    one class.
 8. **A second provider.** GitLab, behind the ingestion interface.
+9. **Batch the page upserts.** The opencode sync spends about 4 s per page,
+   most of it in row-by-row upserts inside one transaction. Multi-row
+   `INSERT ... ON CONFLICT` per entity would cut an initial sync of that
+   size from 20 minutes to a few.
 
 ## How I used AI
 
@@ -187,11 +192,39 @@ What is verified in this checkout:
   retries (`test/sync.e2e-spec.ts`, `test/upserts.e2e-spec.ts`,
   `src/github/github-graphql.client.spec.ts`).
 
-What is not verified: the live spot check. No sync has been run against
-api.github.com from this checkout, so no synced number has been compared with
-what GitHub shows for the same repository and window, the opencode volume in
-the README is an estimate, and `seed/` is empty. The quickstart and the README
-examples use the synthetic `evalco/service-1` fixture.
+- **Live sync (2026-10-29).** Both repositories were synced from this checkout
+  against api.github.com for 2026-08-31 to 2026-10-26. `dataelement/dsh-desktop`
+  took 67 s and 16 GraphQL requests (370 PRs, 4 reviews, 254 issues, 390
+  commits). `anomalyco/opencode` took 20 min 20 s and 316 requests (8,436 PRs,
+  5,123 reviews, 11,469 issues, 3,099 commits), RSS 56 MB at the end, no
+  rate-limit wait. That is twice the 10 minutes the design expected: each
+  page costs one GraphQL round trip plus a transaction of row-by-row upserts,
+  about 4 s per page, so the next step is batching the upserts per page.
+- **Spot check against GitHub.** For dsh-desktop, `prs_merged` in the weeks of
+  2026-09-21, 2026-10-05 and 2026-10-19 (54, 9, 4) equals GitHub search's
+  `issueCount` for `is:pr is:merged merged:<week>`, and PR #742 shows 30.73 h
+  from open to merge in both the example item and the API.
+- **Seed identity.** `seed/dsh-desktop.json` was exported from that sync.
+  Deleting the repository and running `db:seed` reproduced the week and day
+  insights responses byte for byte.
+- **Live narratives.** The dsh-desktop narrative was grounded with 0 rejected
+  evidence items at $0.13 (3 tool calls, 32 s). The opencode narrative, over
+  20 signals, was grounded with 0 rejections at $0.19 (6 tool calls, 32 s); it
+  named a bulk triage week and a maintainer-led merge surge, with confidences
+  0.7 and 0.75, and the headline and both hypotheses match what the signals
+  show. One wart: the prose quoted an unrounded duration
+  (`8007.546666666667 hours`), a formatting rule the prompt should carry.
+
+What the live run found: the first opencode sync failed with `bad_query` on
+issues page 27. GitHub returns one issue there as a `null` node with an
+`INTERNAL` error, deterministically, even for `id number` alone. The client
+mapped every unrecognised GraphQL error to a fatal `bad_query`; it now treats
+such server failures as GraphQL partial success, drops the failed node and
+keeps the page. The recorded fake never produced this shape, which is the
+argument for running against the real API before calling an integration done.
+
+What is not verified live: incremental and backfill syncs (covered by the
+recorded fake only), and any repository beyond these two.
 
 ## Eval results
 

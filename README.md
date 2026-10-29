@@ -33,54 +33,56 @@ cp .env.example .env
 docker compose up -d db
 npm install
 npm run db:migrate
-npm run demo:seed
+npm run db:seed
 npm run start:dev
 ```
 
-`npm run demo:seed` loads a synthetic repository, `evalco/service-1`. It is the
-`latency_spike` eval fixture: eight weeks, 205 PRs, 42 issues and 191 commits,
-with first-review latency planted at 5x in the week of 2026-10-05. It needs no
-GitHub token.
+`npm run db:seed` loads every snapshot in `seed/`. The checkout ships one,
+`seed/dsh-desktop.json` (408 KB): real data for `dataelement/dsh-desktop`,
+exported with `npm run snapshot:export` from a live sync on 2026-10-29. It
+covers 2026-08-31 to 2026-10-26 with 370 PRs, 4 reviews, 254 issues and 390
+commits, and needs no GitHub token. Re-seeding reproduces the live responses
+exactly (see "Live sync").
 
-- `npm run demo:seed -- <case>` loads a different eval case instead. The cases
-  are `control`, `reviewer_dropout`, `throughput_shift`, `concentration` and
-  `commit_only`, and each loads under its own name (`evalco/service-<seed>`;
-  the script prints the name and window).
+- `npm run demo:seed` loads a synthetic repository instead, `evalco/service-1`:
+  the `latency_spike` eval fixture, eight weeks with first-review latency
+  planted at 5x in the week of 2026-10-05. `npm run demo:seed -- <case>` loads
+  another eval case (`control`, `reviewer_dropout`, `throughput_shift`,
+  `concentration` or `commit_only`), each under its own name
+  (`evalco/service-<seed>`; the script prints the name and window).
 - The fixtures reuse synthetic GitHub ids, so `demo:seed` first deletes every
   repository owned by `evalco`: only one case is loaded at a time. It refuses
   to load if another repository already holds those ids.
-- `npm run db:seed` loads every snapshot in `seed/`. `seed/` is empty in this
-  checkout, because no live sync has been run from it (see "Live sync"), so
-  `db:seed` reports that and `demo:seed` is the way to load data.
 
 Then, in another terminal:
 
 ```bash
-curl -s 'http://localhost:3000/api/v1/repos/evalco/service-1/insights?from=2026-08-31&to=2026-10-26'
-curl -s 'http://localhost:3000/api/v1/repos/evalco/service-1/narrative?from=2026-08-31&to=2026-10-26'
+curl -s 'http://localhost:3000/api/v1/repos/dataelement/dsh-desktop/insights?from=2026-08-31&to=2026-10-26'
+curl -s 'http://localhost:3000/api/v1/repos/dataelement/dsh-desktop/narrative?from=2026-08-31&to=2026-10-26'
 curl -s 'http://localhost:3000/api/v1/health'
 ```
 
-The insights call returns 4 signals. The top one is a `high` robust outlier on
-`time_to_first_review_p50_h`, 21.53 h against a typical 6.29 h. The first
-narrative call is a cache miss, so it runs the model: 15 to 30 seconds, about
-$0.06. Repeat calls return the stored narrative with `cached: true`.
+The insights call returns 10 signals. The top one is a `high` robust outlier
+on `commits`, 132 in the week of 2026-08-31 against a typical 28. The first
+narrative call is a cache miss, so it runs the model: about 30 seconds and
+$0.13 for this repository (3 tool calls). Repeat calls return the stored
+narrative with `cached: true`. For the synthetic fixture, the same calls on
+`evalco/service-1` return 4 signals led by a 5x first-review latency outlier.
 
-To use the demo page, open <http://localhost:3000/>. Click "Use synthetic demo
-repo", which fills in `evalco/service-1`, From 2026-08-31 and To 2026-10-26,
+To use the demo page, open <http://localhost:3000/>. Click "Use demo repo",
+which fills in `dataelement/dsh-desktop`, From 2026-08-31 and To 2026-10-26,
 then click "Load insights" and "Generate narrative". The OpenAPI UI is at
 <http://localhost:3000/docs>.
 
 ## Docker
 
-The container runs the app, but the data has to be loaded from the host:
-`seed/` is empty, and the image does not ship `eval/`, so `demo:seed` cannot
-run inside it.
+The container runs the app and can load the committed seed itself; no Node
+on the host is needed.
 
 ```bash
-cp .env.example .env        # required: the host-side demo:seed needs DATABASE_URL
+cp .env.example .env        # set ANTHROPIC_API_KEY for narratives
 docker compose up --build -d
-npm install && npm run demo:seed
+docker compose exec app npm run db:seed
 ```
 
 - **Startup.** The `app` container waits for a healthy `db`, runs
@@ -92,23 +94,39 @@ npm install && npm run demo:seed
   image's `production` default, which gives pretty logs instead of JSON.
 - **Database.** Postgres is published on `localhost:5432`, so the host-side
   seed writes to the database the container reads.
-- **Seed snapshots.** `docker compose exec app npm run db:seed` loads any
-  snapshot placed in `seed/` from inside the container, with no Node needed
-  on the host. With `seed/` empty it has nothing to load.
+- **Seed snapshots.** `docker compose exec app npm run db:seed` loads every
+  snapshot in `seed/` from inside the container (the image copies the
+  directory). The synthetic cases need the host: the image does not ship
+  `eval/`, so run `npm install && npm run demo:seed` on the host instead.
 
 ## Live sync
 
 Live sync needs `GITHUB_TOKEN`. A fine-grained token with read-only access to
-public repositories and no other permissions is enough. The default demo
-repository is `anomalyco/opencode`. Its volume, about 6,500 PRs and 6,600
-issues in eight weeks, is an estimate from the design phase, not a
-measurement.
+public repositories and no other permissions is enough.
 
-**Verification status.** The GitHub integration is verified against a
-recorded fake: fixture pages covering paging, review overflow, bots,
-self-reviews, rate-limit sleep and retries. It has not yet been run against
-api.github.com from this checkout, so the commands below are the documented
-path, not a recorded run.
+**Verification status (2026-10-29, from this checkout).** Beyond the recorded
+fake used by the test suites, both target repositories were synced against
+api.github.com for the default window, 2026-08-31 to 2026-10-26:
+
+| Repository | Duration | GraphQL requests | PRs / reviews / issues / commits | RSS at end |
+|---|---|---|---|---|
+| `dataelement/dsh-desktop` | 67 s | 16 | 370 / 4 / 254 / 390 | 84 MB |
+| `anomalyco/opencode` | 20 min 20 s | 316 | 8,436 / 5,123 / 11,469 / 3,099 | 56 MB |
+
+- Weekly `prs_merged` for three weeks of dsh-desktop (54, 9 and 4) equals
+  GitHub's own search count for `is:pr is:merged merged:<week>`; the example
+  PR #742 shows 30.73 h from open to merge in both places.
+- Re-seeding the exported snapshot after deleting the repository returns
+  week and day insights identical to the live responses (zero-line diff).
+- The first opencode attempt failed: GitHub answers one of its issues with an
+  `INTERNAL` error and a `null` node, deterministically. The client now
+  handles that partial response (see "Partial responses" below); the
+  successful run logged exactly one dropped node.
+- The design expected opencode under 10 minutes; it took 20. Neither rate
+  limit nor retries were involved (316 requests, about 150 points spent per
+  window): the time is one GraphQL round trip plus one transaction of
+  row-by-row upserts per page, about 4 s per page. Batching the upserts is
+  the obvious next step and is listed in NOTES.
 
 ```bash
 # Start a sync of the default window (last 8 complete ISO weeks).

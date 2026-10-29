@@ -7,8 +7,8 @@
 
   /** Same pattern as the server (src/ingestion/dto.ts NAME_PATTERN). */
   const NAME = /^[A-Za-z0-9](?:[A-Za-z0-9._-]{0,99})$/;
-  /** The synthetic fixture `npm run demo:seed` loads, and the window it covers. */
-  const DEMO = { repo: 'evalco/service-1', from: '2026-08-31', to: '2026-10-26' };
+  /** The committed snapshot `npm run db:seed` loads, and the window it covers. */
+  const DEMO = { repo: 'dataelement/dsh-desktop', from: '2026-08-31', to: '2026-10-26' };
   const POLL_MS = 2000;
   const SVG_NS = 'http://www.w3.org/2000/svg';
 
