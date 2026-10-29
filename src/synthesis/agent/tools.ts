@@ -20,6 +20,7 @@ export const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
     'Compare one metric across two sub-windows using complete buckets only, returning median, mean, total and bucket count for each and the change in median. Use it to quantify a before and after claim.',
 };
 
+const MAX_EXAMPLES = 10;
 const DATE = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const METRIC = z.enum(METRIC_NAMES);
 const WINDOW = z.object({ from: DATE, to: DATE });
@@ -92,10 +93,13 @@ function bucketExamples(ctx: ToolContext) {
     inputSchema: z.object({
       metric: METRIC,
       bucket: DATE,
-      limit: z.number().int().min(1).max(10),
+      // Strict tool schemas reject numeric bounds, so the range is described
+      // here and enforced in `run`.
+      limit: z.number().describe('How many items, 1 to 10'),
     }),
     strict: true,
-    run: async ({ metric, bucket, limit }) => {
+    run: async ({ metric, bucket, limit: requested }) => {
+      const limit = Math.min(MAX_EXAMPLES, Math.max(1, Math.round(requested)));
       const found = bucketByKey(ctx, bucket);
       if (!found) {
         return json({

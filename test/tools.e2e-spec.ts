@@ -122,6 +122,29 @@ describe('agent tools (e2e)', () => {
     ).toContain('#3');
   });
 
+  it('sends no numeric bounds in any input schema (strict tools reject them)', () => {
+    for (const t of buildTools(ctx)) {
+      const schema = (t as { input_schema?: unknown }).input_schema;
+      expect(schema).toBeDefined();
+      expect(JSON.stringify(schema)).not.toMatch(
+        /"(minimum|maximum|exclusiveMinimum|exclusiveMaximum)"/,
+      );
+    }
+  });
+
+  it('get_bucket_examples clamps limit into 1..10', async () => {
+    const t = tool('get_bucket_examples');
+    const run = async (limit: number) =>
+      JSON.parse(
+        await t.run(
+          t.parse({ metric: 'time_to_first_review_p50_h', bucket: W1, limit }),
+        ),
+      ).examples as unknown[];
+    expect(await run(0)).toHaveLength(1);
+    expect(await run(1.6)).toHaveLength(2);
+    expect(await run(50)).toHaveLength(3);
+  });
+
   it('get_bucket_examples reports an unknown bucket without throwing', async () => {
     const t = tool('get_bucket_examples');
     const res = JSON.parse(
