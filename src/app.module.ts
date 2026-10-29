@@ -6,12 +6,14 @@ import { buildLoggerOptions } from './config/logger';
 import { PrismaModule } from './prisma/prisma.module';
 import { GithubModule } from './github/github.module';
 import { HealthController } from './health/health.controller';
+import { IngestionModule } from './ingestion/ingestion.module';
 
 @Module({
   imports: [
     ConfigModule,
     PrismaModule,
     GithubModule,
+    IngestionModule,
     LoggerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ENV],
