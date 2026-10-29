@@ -33,7 +33,7 @@ async function main(): Promise<void> {
         await loadSnapshot(prisma, snapshot);
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
-        throw new Error(`${file}: ${msg}`);
+        throw new Error(`${file}: ${msg}`, { cause: err });
       }
       const { owner, name } = snapshot.repository;
       console.log(
