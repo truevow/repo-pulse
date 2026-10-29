@@ -19,7 +19,7 @@ WORKDIR /app
 ENV NODE_ENV=production PORT=3000
 COPY --from=build --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/dist ./dist
-COPY --chown=node:node package.json package-lock.json tsconfig.json ./
+COPY --chown=node:node package.json tsconfig.json ./
 COPY --chown=node:node prisma ./prisma
 COPY --chown=node:node public ./public
 COPY --chown=node:node seed ./seed

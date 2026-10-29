@@ -11,6 +11,9 @@ on:
         description: Only run the case with this id (optional)
         required: false
 
+permissions:
+  contents: read
+
 jobs:
   eval:
     runs-on: ubuntu-latest
@@ -43,9 +46,11 @@ jobs:
         run: PGPASSWORD=repo_pulse psql -h localhost -U repo_pulse -d repo_pulse -c 'CREATE DATABASE repo_pulse_test'
       - run: npm ci
       - run: npx prisma generate
+      - name: Migrate test database
+        run: DATABASE_URL="$DATABASE_URL_TEST" npx prisma migrate deploy
       - name: Run eval
         run: |
-          args=(--runs "$RUNS")
+          args=(--runs "${RUNS:-3}")
           if [ -n "$CASE_ID" ]; then args+=(--case "$CASE_ID"); fi
           npm run eval -- "${args[@]}"
       - uses: actions/upload-artifact@v4

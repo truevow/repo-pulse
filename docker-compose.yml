@@ -22,6 +22,7 @@ services:
       - path: .env
         required: false
     environment:
+      PORT: 3000
       DATABASE_URL: postgresql://repo_pulse:repo_pulse@db:5432/repo_pulse
     depends_on:
       db:
