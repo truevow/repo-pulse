@@ -8,9 +8,14 @@ import type { Snapshot } from '../src/snapshot/snapshot.types';
 const SEED_DIR = join(__dirname, '..', 'seed');
 
 async function main(): Promise<void> {
-  const files = readdirSync(SEED_DIR)
-    .filter((f) => f.endsWith('.json'))
-    .sort();
+  let files: string[] = [];
+  try {
+    files = readdirSync(SEED_DIR)
+      .filter((f) => f.endsWith('.json'))
+      .sort();
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err;
+  }
   if (files.length === 0) {
     console.log(
       'No snapshots found in seed/. Add a *.json snapshot (see npm run snapshot:export) and re-run.',
@@ -20,10 +25,16 @@ async function main(): Promise<void> {
   const prisma = new PrismaClient();
   try {
     for (const file of files) {
-      const snapshot = JSON.parse(
-        readFileSync(join(SEED_DIR, file), 'utf8'),
-      ) as Snapshot;
-      await loadSnapshot(prisma, snapshot);
+      let snapshot: Snapshot;
+      try {
+        snapshot = JSON.parse(
+          readFileSync(join(SEED_DIR, file), 'utf8'),
+        ) as Snapshot;
+        await loadSnapshot(prisma, snapshot);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        throw new Error(`${file}: ${msg}`);
+      }
       const { owner, name } = snapshot.repository;
       console.log(
         `${owner}/${name}: ${snapshot.pullRequests.length} PRs, ` +

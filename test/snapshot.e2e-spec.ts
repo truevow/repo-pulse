@@ -170,6 +170,19 @@ describe('snapshot export/load (DB)', () => {
     expect(strip(again)).toEqual(strip(SNAPSHOT));
   });
 
+  it('rejects unsupported versions and leaves the DB unchanged', async () => {
+    const bad = { version: 2 } as unknown as Snapshot;
+    await expect(loadSnapshot(prisma, bad)).rejects.toThrow(/version/i);
+    expect(await counts()).toEqual({
+      repositories: 0,
+      actors: 0,
+      pullRequests: 0,
+      reviews: 0,
+      issues: 0,
+      commits: 0,
+    });
+  });
+
   it('rejects exporting an unknown repository', async () => {
     await expect(exportSnapshot(prisma, 'no', 'such')).rejects.toThrow(
       /not found/i,

@@ -144,11 +144,33 @@ export async function exportSnapshot(
   };
 }
 
+function assertSnapshot(value: unknown): asserts value is Snapshot {
+  if (typeof value !== 'object' || value === null) {
+    throw new Error('Invalid snapshot: expected a JSON object');
+  }
+  const s = value as Record<string, unknown>;
+  if (s.version !== 1) {
+    throw new Error(
+      `Unsupported snapshot version: ${JSON.stringify(s.version)} (expected 1)`,
+    );
+  }
+  const repo = s.repository as Record<string, unknown> | null | undefined;
+  if (typeof repo !== 'object' || repo === null) {
+    throw new Error('Invalid snapshot: missing "repository"');
+  }
+  for (const key of ['actors', 'pullRequests', 'issues', 'commits']) {
+    if (!Array.isArray(s[key])) {
+      throw new Error(`Invalid snapshot: "${key}" must be an array`);
+    }
+  }
+}
+
 /** Upserts a whole snapshot in one transaction. Idempotent. */
 export async function loadSnapshot(
   prisma: PrismaClient,
   snapshot: Snapshot,
 ): Promise<{ repositoryId: number }> {
+  assertSnapshot(snapshot);
   const r = snapshot.repository;
   return prisma.$transaction(
     async (tx: Prisma.TransactionClient) => {
