@@ -129,11 +129,26 @@ the detectors:
 
 - **Window-edge buckets** cut by an explicit `from` or `to`.
 - **Buckets outside the synced coverage range** (ruling R10). Before coverage
-  begins, the database is simply empty, so those weeks come back as zeros. In
-  the first insights run, those zeros produced a false `commits` outlier.
+  begins, the database is simply empty, so the SQL returns zeros for those
+  weeks. In the first insights run, those zeros produced a false `commits`
+  outlier.
 
-The response's `buckets[].partial` flag reflects window edges only. Coverage
-is reported separately in `coverage`.
+The response's `buckets[].partial` flag reflects window edges only. A
+separate `buckets[].covered` flag is true when the bucket's in-window span
+lies inside `[coverage.from, coverage.to)`. An uncovered bucket was never
+synced, so every one of its metrics is `null` in the response, never a zero.
+Everything downstream treats it as "no data":
+
+- the user message renders the row as `<key>!` with `-` in every cell, and
+  the system prompt explains the `!` marker;
+- `get_metric_series` returns `value: null, covered: false` for it and
+  records nothing;
+- `get_bucket_examples` refuses it with `{"error": "bucket_not_synced"}`:
+  the only rows there are stragglers fetched for a later window (a PR
+  created before coverage but updated inside it);
+- `compare_windows` skips it, as it skips partial buckets;
+- the fact ledger seeds nothing from it;
+- the demo page marks its column header with `!`.
 
 ### Robust baseline (shared)
 
@@ -275,10 +290,10 @@ When a key is written twice, the later write wins.
 
 | Source | metric | bucket | entity |
 |---|---|---|---|
-| Insights bucket cell (and `get_metric_series`) | metric name | bucket key | null |
-| Contributors leaderboard | `merged_prs`, `commits`, `lines_changed` | null | login |
-| Reviewers leaderboard | `reviews`, `approvals` | null | login |
-| Mergers leaderboard | `prs_merged_by` | null | login |
+| Insights bucket cell (and `get_metric_series`), covered buckets only | metric name | bucket key | null |
+| Contributors leaderboard, top 10 rows | `merged_prs`, `commits`, `lines_changed` | null | login |
+| Reviewers leaderboard, top 10 rows | `reviews`, `approvals` | null | login |
+| Mergers leaderboard, top 10 rows | `prs_merged_by` | null | login |
 | Signal observed value | metric name (the cell is written only if absent or equal) | signal bucket | null |
 | Level-shift observed (recent median) | `<metric>.observed` | signal bucket | null |
 | Signal baseline median | `<metric>.baseline_median` | signal bucket | null |
@@ -290,6 +305,14 @@ When a key is written twice, the later write wins.
 Signal facts always carry `entity = null`, even when the signal names a
 person, and the system prompt says so explicitly. A person's numbers are
 cited through the leaderboards or `get_contributor_activity`.
+
+The insights response lists up to 20 rows per leaderboard, but the user
+message shows only the top 10, so only those 10 are seeded: a row the model
+was never shown is not a fact. `get_contributor_activity` resolves the login
+case-insensitively to the stored login and records cells under that login.
+A login with no actor row returns `{"error": "unknown_login", "login": ...}`
+and records nothing, so an unknown person never yields a series of grounded
+zeros.
 
 ### Evidence checks (in order)
 
@@ -350,7 +373,7 @@ below are applied in order to the surviving evidence. Each rule is recorded in
 | # | Adjustment | Condition | Effect |
 |---|---|---|---|
 | 1 | `few_evidence_items` | Fewer than 2 surviving evidence items | Cap at 0.4 |
-| 2 | `no_signal_cited` | No surviving item's `signal_id` resolves to a detector signal | Cap at 0.5 |
+| 2 | `no_signal_cited` | No surviving item backs a detector signal (see below) | Cap at 0.5 |
 | 3 | `moderate_signal_only` | Signals are cited and every cited signal is `moderate` | Cap at 0.6 |
 | 4 | `evidence_rejected` | Grounding rejected at least one item of this hypothesis | Multiply by 0.8 |
 | 5 | `partial_data` | `coverage.partial`, or pull requests or issues are unavailable | Cap at 0.5 |
@@ -360,6 +383,23 @@ The result is rounded to two decimals. The response carries both
 their order does not matter. This is a rule-based proxy for calibration, not a
 calibrated probability (see NOTES.md).
 
+- **Which items back a signal (rules 2 and 3).** An item counts as citing a
+  signal only when its `signal_id` resolves, its base metric (the part before
+  the first `.`, so `<metric>.item` and `<metric>.baseline_median` count)
+  equals the signal's metric, and its bucket equals the signal's bucket. An
+  item with a null bucket never backs a signal. Without this, the model could
+  lift the cap by attaching a real signal id to an unrelated fact. Grounding
+  stays lenient: such an item is not rejected (its id is known and its fact
+  checks out), it just earns no signal credit.
+- **`partial_data` is global.** `coverage.partial` and an unavailable pull
+  request or issue source cap every hypothesis in the response, not only
+  hypotheses whose evidence touches the missing entity (the spec's "required
+  entity" reading). A hypothesis that cites only commit facts can still be
+  wrong because of what it could not see, such as PR activity that explains a
+  commit drop, and deciding which entities a causal claim depends on would
+  need a judgement the deterministic layer cannot make. The simpler rule
+  errs toward lower confidence.
+
 ## Narrative cache key
 
 ```
@@ -368,6 +408,8 @@ key = sha256(JSON.stringify([
   window.from, window.to,          // resolved ISO timestamps, not the raw query
   bucket, includeBots,
   signalsFingerprint,              // sha256 of the sorted "id:observed" list
+  dataFingerprint,                 // sha256 of the user message (buildUserMessage)
+  coverage.lastSyncedAt,           // start of the last successful sync, or null
   PROMPT_VERSION, ANTHROPIC_MODEL, ANTHROPIC_EFFORT,
 ]))
 ```
@@ -379,9 +421,11 @@ the next.
   `cached: true`. `refresh=true` skips the lookup and overwrites the row.
 - **Concurrent requests.** Identical concurrent misses share one in-flight
   generation.
-- **What the key does not cover.** A re-sync that changes metric values but
-  leaves the signal set and the observed values identical reuses the stored
-  narrative.
+- **What the key covers.** `dataFingerprint` covers everything the model is
+  shown up front: every cell, leaderboard row, signal, example, coverage and
+  availability line. Tool results read Postgres, which changes through
+  syncs, so `lastSyncedAt` covers them: any successful sync, even one that
+  changes nothing, yields a new key.
 
 ## 409 and partial-coverage rules
 
@@ -400,7 +444,9 @@ the next.
   - `to` is after `coveredTo`.
 
   On partial coverage, the response still answers with `coverage.partial:
-  true` and the covered range. The detectors skip uncovered buckets (R10), and
-  calibration caps every hypothesis at 0.5. The demo page shows a warning.
+  true` and the covered range. Uncovered buckets carry `covered: false` and
+  null metrics (see "Which buckets are scored"), the detectors, tools and
+  ledger skip them (R10), and calibration caps every hypothesis at 0.5. The
+  demo page shows a warning.
   The API itself returns the covered range but no explicit "run a wider sync"
   hint.

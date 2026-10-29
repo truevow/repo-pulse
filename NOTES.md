@@ -14,8 +14,8 @@ npm run start:dev       # then open http://localhost:3000/
 
 | Path | Command |
 |---|---|
-| Live sync | Set `GITHUB_TOKEN`, then `POST /api/v1/repos/anomalyco/opencode/sync` |
-| Docker, with data loaded from the host until `seed/dsh-desktop.json` lands | `docker compose up --build -d`, then `npm run demo:seed` on the host |
+| Live sync (verified against a recorded fake only; see "Numbers verified") | Set `GITHUB_TOKEN`, then `POST /api/v1/repos/anomalyco/opencode/sync` |
+| Docker, with data loaded from the host (`seed/` is empty) | `docker compose up --build -d`, then `npm run demo:seed` on the host |
 | Tests | `npm test`, `npm run test:e2e`, `npm run eval -- --dry` (free) or `npm run eval` (about $0.75) |
 
 ## Architecture tour and main decisions
@@ -154,9 +154,11 @@ from cache, made 3 tool calls, and cost $0.043 in 17 s.
 
 - **History and commits.** Commits deleted by a force push are never pruned,
   and incremental syncs miss commits pushed late with old committed dates.
-- **Cache scope.** The cache key covers signals, not every metric value. A
-  re-sync that leaves the signals identical reuses the stored narrative until
-  `refresh=true`.
+- **Cache scope.** The cache key includes `lastSyncedAt`, so every
+  successful sync invalidates the repository's narratives, even a sync that
+  changed nothing; the next request regenerates once. The key does not cover
+  a direct database edit that leaves the user message and `lastSyncedAt`
+  unchanged.
 - **Cost accounting.** `costUsd` uses Opus 5.5 list prices even when the
   fallback served the request. The eval records $0 for a failed run.
 - **Prose check coverage.** The prose check covers only the headline and the
@@ -169,7 +171,27 @@ from cache, made 3 tool calls, and cost $0.043 in 17 s.
 
 ## Numbers verified
 
-Pending: filled in by the live-sync step (Task 16) once a read-only GITHUB_TOKEN is available.
+What is verified in this checkout:
+
+- **Metric SQL.** `test/metrics.e2e-spec.ts` loads a hand-built four-week
+  fixture (`test/fixtures/snapshots/metrics-fixture.ts`) with planted traps
+  (a self-review, a `PENDING` and a `DISMISSED` review, bot reviews, items
+  that straddle the window) and asserts all 15 metrics per week, the
+  leaderboards, example items and contributor activity against values
+  recomputed by hand from the fixture rows.
+- **Narrative evidence.** In the eval baseline
+  (`eval/reports/2026-10-29T05-17-04.490Z/`), all 83 evidence items across
+  the 18 runs were grounded against the fact ledger, with 0 rejections.
+- **GitHub ingestion.** It is verified against a recorded fake: fixture pages
+  covering paging, review overflow, bots, self-reviews, rate-limit sleep and
+  retries (`test/sync.e2e-spec.ts`, `test/upserts.e2e-spec.ts`,
+  `src/github/github-graphql.client.spec.ts`).
+
+What is not verified: the live spot check. No sync has been run against
+api.github.com from this checkout, so no synced number has been compared with
+what GitHub shows for the same repository and window, the opencode volume in
+the README is an estimate, and `seed/` is empty. The quickstart and the README
+examples use the synthetic `evalco/service-1` fixture.
 
 ## Eval results
 
@@ -189,7 +211,7 @@ The baseline is `eval/reports/2026-10-29T05-17-04.490Z/`:
 | commit_only | 100% | n/a | 100% | 0% | 0 (no hypotheses) | $0.010 |
 
 No evidence item was rejected in any of the 18 runs, and both control cases
-returned zero hypotheses every time. The eval surfaced two findings.
+returned zero hypotheses every time. The eval surfaced three findings.
 
 1. **A plausible but wrong causal story on `latency_spike`.**
    - **What was planted.** A uniform 5x first-review latency in the week of
@@ -205,7 +227,16 @@ returned zero hypotheses every time. The eval surfaced two findings.
      confidence stayed around 0.55.
    - **What v2 changes.** A per-case cause-attribution expectation, such as
      "does not blame an entity".
-2. **`commit_only` restates uncited numbers.** A run with zero hypotheses has
+2. **`confidence_ordering` separates cases only weakly.** Planted cases'
+   mean top confidences sit between 0.55 and 0.63, and single runs cluster
+   at the calibration caps of 0.5 and 0.6 (four were cut to 0.6 from 0.65 to
+   0.8 by `moderate_signal_only`). The control returns no hypotheses, so its
+   mean top confidence is 0, and the check passes whenever a planted case
+   produces any hypothesis at all. A stronger check would need a control
+   that tempts a story (noise-only perturbations), a required margin over
+   it, and, over many runs, a reliability measure such as a Brier score of
+   confidence against human-marked correctness.
+3. **`commit_only` restates uncited numbers.** A run with zero hypotheses has
    zero evidence items, so every commit count in its prose is unverifiable:
    0 of 3 runs passed. The fix is prompt v2's "words, not numerals" rule.
    More broadly, the 56% overall pass rate shows that the model restates

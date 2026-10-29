@@ -49,10 +49,9 @@ GitHub token.
 - The fixtures reuse synthetic GitHub ids, so `demo:seed` first deletes every
   repository owned by `evalco`: only one case is loaded at a time. It refuses
   to load if another repository already holds those ids.
-- `npm run db:seed` loads every snapshot in `seed/`. The committed snapshot of
-  `dataelement/dsh-desktop` (`seed/dsh-desktop.json`) is added by the live-sync
-  step. Until then, `db:seed` reports that `seed/` is empty, and
-  `demo:seed` is the fastest demo.
+- `npm run db:seed` loads every snapshot in `seed/`. `seed/` is empty in this
+  checkout, because no live sync has been run from it (see "Live sync"), so
+  `db:seed` reports that and `demo:seed` is the way to load data.
 
 Then, in another terminal:
 
@@ -67,16 +66,16 @@ The insights call returns 4 signals. The top one is a `high` robust outlier on
 narrative call is a cache miss, so it runs the model: 15 to 30 seconds, about
 $0.06. Repeat calls return the stored narrative with `cached: true`.
 
-To use the demo page, open <http://localhost:3000/>. Enter `evalco/service-1`,
-set From 2026-08-31 and To 2026-10-26, then click "Load insights" and
-"Generate narrative". The OpenAPI UI is at <http://localhost:3000/docs>.
+To use the demo page, open <http://localhost:3000/>. Click "Use synthetic demo
+repo", which fills in `evalco/service-1`, From 2026-08-31 and To 2026-10-26,
+then click "Load insights" and "Generate narrative". The OpenAPI UI is at
+<http://localhost:3000/docs>.
 
 ## Docker
 
-The container runs the app, but today the data still has to be loaded from
-the host: `seed/` is empty until the live-sync step adds
-`seed/dsh-desktop.json`, and the image does not ship `eval/`, so
-`demo:seed` cannot run inside it.
+The container runs the app, but the data has to be loaded from the host:
+`seed/` is empty, and the image does not ship `eval/`, so `demo:seed` cannot
+run inside it.
 
 ```bash
 cp .env.example .env        # required: the host-side demo:seed needs DATABASE_URL
@@ -93,17 +92,23 @@ npm install && npm run demo:seed
   image's `production` default, which gives pretty logs instead of JSON.
 - **Database.** Postgres is published on `localhost:5432`, so the host-side
   seed writes to the database the container reads.
-- **Seed snapshot.** Once `seed/dsh-desktop.json` exists,
-  `docker compose exec app npm run db:seed` loads it from inside the
-  container, with no Node needed on the host.
+- **Seed snapshots.** `docker compose exec app npm run db:seed` loads any
+  snapshot placed in `seed/` from inside the container, with no Node needed
+  on the host. With `seed/` empty it has nothing to load.
 
 ## Live sync
 
 Live sync needs `GITHUB_TOKEN`. A fine-grained token with read-only access to
 public repositories and no other permissions is enough. The default demo
-repository is `anomalyco/opencode`. Its volume is an estimate from the design
-phase, about 6,500 PRs and 6,600 issues in eight weeks, and the live-sync step
-will replace it with measured numbers.
+repository is `anomalyco/opencode`. Its volume, about 6,500 PRs and 6,600
+issues in eight weeks, is an estimate from the design phase, not a
+measurement.
+
+**Verification status.** The GitHub integration is verified against a
+recorded fake: fixture pages covering paging, review overflow, bots,
+self-reviews, rate-limit sleep and retries. It has not yet been run against
+api.github.com from this checkout, so the commands below are the documented
+path, not a recorded run.
 
 ```bash
 # Start a sync of the default window (last 8 complete ISO weeks).
@@ -120,18 +125,27 @@ curl -s http://localhost:3000/api/v1/repos/anomalyco/opencode/insights
 curl -s http://localhost:3000/api/v1/repos/anomalyco/opencode/narrative
 ```
 
-- **Duration.** A first opencode sync takes minutes. It pages through GitHub
-  GraphQL with nested reviews, honours the rate limit, and commits each page
-  in its own transaction. The job's `counts` and `rateLimitRemaining` show
-  progress, and the demo page polls them.
+- **Duration.** A first opencode sync is expected to take minutes. It pages
+  through GitHub GraphQL with nested reviews and commits each page in its own
+  transaction. The job's `counts` and `rateLimitRemaining` show progress, and
+  the demo page polls them.
+- **Rate limit.** Before each query, when fewer than 100 points remain, the
+  client sleeps until the window's `resetAt`. A rate-limited response
+  (GraphQL `RATE_LIMITED`, or HTTP 403/429 with no points left) sleeps until
+  the known reset plus 1 s, capped at an hour, unless `retry-after` says
+  otherwise; other transient failures back off exponentially with jitter.
+  At most 5 attempts are made per query.
 - **Repeat requests.** A second POST while a job is queued or running returns
   that job with 200, whatever window it asks for.
 - **Later syncs.** A later sync inside the covered range is incremental: it
   fetches only items updated since the last successful job. A sync whose
-  `from` is earlier than the covered range runs a backfill.
+  `from` is earlier than the covered range runs a backfill. A backfill
+  extends coverage to the old coverage end, so when its window ends before
+  the old coverage starts, it also fetches commits across the gap.
 - **Coverage.** Insights and narrative never trigger a sync. When the
   requested window extends past what was synced, they answer with
-  `coverage.partial: true`.
+  `coverage.partial: true`, and each bucket outside the synced range has
+  `covered: false` and null metrics: no data, not zero activity.
 
 ## Architecture
 
@@ -171,12 +185,14 @@ Request flow for `GET /narrative`:
 2. **409.** If the window has no activity, the request returns
    `no-signal-data` without calling the model.
 3. **Cache.** The cache key is a sha256 of the repo, the resolved window, the
-   bucket, `includeBots`, the signals fingerprint, the prompt version, the
-   model and the effort. A hit returns the stored response. Identical
+   bucket, `includeBots`, the signals fingerprint, a digest of the user
+   message (every number the model is shown), `coverage.lastSyncedAt`, the
+   prompt version, the model and the effort. A hit returns the stored
+   response. Identical
    concurrent misses share one generation.
-4. **Ledger.** A `FactLedger` is seeded with every number in the insights:
-   cells, leaderboards, signal observed and baseline values, and example
-   items.
+4. **Ledger.** A `FactLedger` is seeded with every number the user message
+   shows: cells of synced buckets, the top 10 rows of each leaderboard,
+   signal observed and baseline values, and example items.
 5. **Tool loop.** The SDK's beta tool runner calls `claude-opus-5-5` with:
    - effort `medium`, streaming, and prompt caching on the system prompt;
    - server-side fallback;
@@ -225,7 +241,7 @@ the logs.
 | `POST /repos/{owner}/{repo}/sync` | Start a background sync. The body is optional: `{from?, to?}`. | **202** new job, with `Location: /api/v1/sync-jobs/{id}`<br>**200** a queued or running job already exists for the repo<br>**400** `validation-error`<br>**404** `github-repo-not-found`<br>**503** `github-token-missing` or `github-unavailable` |
 | `GET /sync-jobs/{id}` | Job status (`queued`, `running`, `succeeded`, `failed`), mode (`initial`, `incremental`, `backfill`), counts per entity, `rateLimitRemaining`, error kind | **200**<br>**400** id is not a UUID<br>**404** `not-found` |
 | `GET /repos/{owner}/{repo}/insights` | Per-bucket metrics, leaderboards (top 20), signals with up to 5 examples, detector `parameters`, coverage and availability | **200**<br>**400** `validation-error` (bad window, more than 26 weeks, `to` in the future, bad bucket)<br>**404** `repo-not-synced` |
-| `GET /repos/{owner}/{repo}/narrative` | Headline, narrative, grounded and calibrated hypotheses, caveats, grounding report, `meta` | **200** with `cached`<br>**400**<br>**404** `repo-not-synced`<br>**409** `no-signal-data`<br>**429** `rate-limited`, with `Retry-After: 60`<br>**502** `synthesis-failed`, with `reason`: `refusal`, `max_tokens`, `max_iterations` or `unparseable`<br>**503** `llm-not-configured`, or `llm-unavailable` with `Retry-After: 30` |
+| `GET /repos/{owner}/{repo}/narrative` | Headline, narrative, grounded and calibrated hypotheses, caveats, grounding report, `meta` | **200** with `cached`<br>**400**<br>**404** `repo-not-synced`<br>**409** `no-signal-data`<br>**429** `rate-limited`, with `Retry-After: 60`<br>**502** `synthesis-failed`, with `reason`: `refusal`, `max_tokens`, `max_iterations`, `unparseable`, or `upstream_<status>` for any other provider error (such as an unknown `ANTHROPIC_MODEL`)<br>**503** `llm-not-configured`, or `llm-unavailable` with `Retry-After: 30` |
 | `GET /health` | Liveness and database reachability | **200** `{"status":"ok","db":"up"}`<br>**503** with `"db":"down"` |
 
 Outside `/api/v1`:
@@ -234,7 +250,10 @@ Outside `/api/v1`:
 - `GET /docs` serves the Swagger UI.
 - `GET /docs-json` serves the OpenAPI document.
 
-Unhandled errors return 500 `internal`, with no internal detail.
+Unhandled errors return 500 `internal`, with no internal detail. Framework
+HTTP errors map 400 and 422 to `validation-error`, 404 to `not-found`, 409 to
+`conflict` and 429 to `rate-limited`; any other status (405, 413, ...) keeps
+its real status with type `internal`.
 
 ### Example: insights (trimmed, from `evalco/service-1`)
 
@@ -248,7 +267,7 @@ Unhandled errors return 500 `internal`, with no internal detail.
   "availability": { "pullRequests": "available", "issues": "available", "commits": "available" },
   "buckets": [
     {
-      "key": "2026-10-05", "start": "2026-10-05T00:00:00.000Z", "end": "2026-10-12T00:00:00.000Z", "partial": false,
+      "key": "2026-10-05", "start": "2026-10-05T00:00:00.000Z", "end": "2026-10-12T00:00:00.000Z", "partial": false, "covered": true,
       "metrics": {
         "prs_opened": 25, "prs_merged": 17, "prs_closed_unmerged": 1,
         "time_to_first_review_p50_h": 21.53333333333333, "time_to_merge_p50_h": 41.38333333333333,
@@ -374,8 +393,8 @@ empty value (for example `GITHUB_TOKEN=`) counts as unset.
 ## Testing
 
 ```bash
-npm test                 # unit tests: detectors, grounding, calibration, cache key, prompt, runner; no DB (162 tests)
-npm run test:e2e         # API and SQL against repo_pulse_test, with fake GitHub and fake model clients (109 tests)
+npm test                 # unit tests: detectors, grounding, calibration, cache key, prompt, runner; no DB (176 tests)
+npm run test:e2e         # API and SQL against repo_pulse_test, with fake GitHub and fake model clients (116 tests)
 npm run eval:detectors   # the deterministic detector suite only (35 tests)
 npm run eval -- --dry    # builds the six fixtures and runs the detectors; no model calls
 npm run eval             # 6 planted-cause cases x 3 runs against the real API
