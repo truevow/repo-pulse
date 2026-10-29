@@ -9,7 +9,6 @@ import { METRICS_WINDOW, W1, W2, W3, W4 } from './metrics-fixture';
  */
 export const PR_DISABLED_OWNER = 'acme';
 export const PR_DISABLED_REPO = 'commits-only';
-export const PR_DISABLED_WINDOW = METRICS_WINDOW;
 
 /** Commits per week, in W1..W4 order. */
 export const PR_DISABLED_COMMITS: Record<string, number> = {
