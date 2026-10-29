@@ -3,11 +3,13 @@ import { LoggerModule } from 'nestjs-pino';
 import { ConfigModule } from './config/config.module';
 import { ENV, type Env } from './config/env';
 import { buildLoggerOptions } from './config/logger';
+import { PrismaModule } from './prisma/prisma.module';
 import { HealthController } from './health/health.controller';
 
 @Module({
   imports: [
     ConfigModule,
+    PrismaModule,
     LoggerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ENV],

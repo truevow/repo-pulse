@@ -1,0 +1,205 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SyncStatus {
+  queued
+  running
+  succeeded
+  failed
+}
+
+enum SyncMode {
+  initial
+  incremental
+  backfill
+}
+
+enum PrState {
+  OPEN
+  MERGED
+  CLOSED
+}
+
+enum IssueState {
+  OPEN
+  CLOSED
+}
+
+enum ReviewState {
+  APPROVED
+  CHANGES_REQUESTED
+  COMMENTED
+  DISMISSED
+  PENDING
+}
+
+model Repository {
+  id               Int       @id @default(autoincrement())
+  githubId         String    @unique
+  owner            String
+  name             String
+  defaultBranch    String
+  hasIssuesEnabled Boolean
+  hasPullRequests  Boolean   @default(true)
+  coveredFrom      DateTime? @db.Timestamptz
+  coveredTo        DateTime? @db.Timestamptz
+  lastSyncedAt     DateTime? @db.Timestamptz
+  createdAt        DateTime  @default(now()) @db.Timestamptz
+  updatedAt        DateTime  @updatedAt @db.Timestamptz
+
+  syncJobs     SyncJob[]
+  pullRequests PullRequest[]
+  issues       Issue[]
+  commits      Commit[]
+  narratives   Narrative[]
+
+  @@unique([owner, name])
+  @@map("repositories")
+}
+
+model SyncJob {
+  id                 String     @id @default(uuid())
+  repositoryId       Int
+  status             SyncStatus @default(queued)
+  mode               SyncMode
+  requestedFrom      DateTime   @db.Timestamptz
+  requestedTo        DateTime   @db.Timestamptz
+  pullRequests       Int        @default(0)
+  reviews            Int        @default(0)
+  issues             Int        @default(0)
+  commits            Int        @default(0)
+  rateLimitRemaining Int?
+  error              String?
+  createdAt          DateTime   @default(now()) @db.Timestamptz
+  startedAt          DateTime?  @db.Timestamptz
+  finishedAt         DateTime?  @db.Timestamptz
+
+  repository Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+
+  @@index([repositoryId, status])
+  @@map("sync_jobs")
+}
+
+model Actor {
+  id    Int     @id @default(autoincrement())
+  login String  @unique
+  isBot Boolean @default(false)
+
+  authoredPullRequests PullRequest[] @relation("PullRequestAuthor")
+  mergedPullRequests   PullRequest[] @relation("PullRequestMerger")
+  reviews              Review[]
+  issues               Issue[]
+  commits              Commit[]
+
+  @@map("actors")
+}
+
+model PullRequest {
+  id           Int       @id @default(autoincrement())
+  repositoryId Int
+  githubId     String    @unique
+  number       Int
+  title        String
+  authorId     Int?
+  mergedById   Int?
+  state        PrState
+  isDraft      Boolean
+  createdAt    DateTime  @db.Timestamptz
+  updatedAt    DateTime  @db.Timestamptz
+  mergedAt     DateTime? @db.Timestamptz
+  closedAt     DateTime? @db.Timestamptz
+  additions    Int
+  deletions    Int
+  changedFiles Int
+  baseRef      String
+
+  repository Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  author     Actor?     @relation("PullRequestAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  mergedBy   Actor?     @relation("PullRequestMerger", fields: [mergedById], references: [id], onDelete: SetNull)
+  reviews    Review[]
+
+  @@unique([repositoryId, number])
+  @@index([repositoryId, createdAt])
+  @@index([repositoryId, mergedAt])
+  @@index([repositoryId, closedAt])
+  @@map("pull_requests")
+}
+
+model Review {
+  id            Int         @id @default(autoincrement())
+  pullRequestId Int
+  githubId      String      @unique
+  authorId      Int?
+  state         ReviewState
+  submittedAt   DateTime    @db.Timestamptz
+  commentCount  Int         @default(0)
+
+  pullRequest PullRequest @relation(fields: [pullRequestId], references: [id], onDelete: Cascade)
+  author      Actor?      @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([pullRequestId, submittedAt])
+  @@index([authorId, submittedAt])
+  @@map("reviews")
+}
+
+model Issue {
+  id           Int        @id @default(autoincrement())
+  repositoryId Int
+  githubId     String     @unique
+  number       Int
+  title        String
+  authorId     Int?
+  state        IssueState
+  createdAt    DateTime   @db.Timestamptz
+  updatedAt    DateTime   @db.Timestamptz
+  closedAt     DateTime?  @db.Timestamptz
+  labels       String[]
+
+  repository Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  author     Actor?     @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@unique([repositoryId, number])
+  @@index([repositoryId, createdAt])
+  @@index([repositoryId, closedAt])
+  @@map("issues")
+}
+
+model Commit {
+  id            Int      @id @default(autoincrement())
+  repositoryId  Int
+  sha           String
+  authorId      Int?
+  authorName    String
+  committedDate DateTime @db.Timestamptz
+  additions     Int
+  deletions     Int
+
+  repository Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  author     Actor?     @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@unique([repositoryId, sha])
+  @@index([repositoryId, committedDate])
+  @@map("commits")
+}
+
+model Narrative {
+  id            Int      @id @default(autoincrement())
+  repositoryId  Int
+  cacheKey      String   @unique
+  promptVersion String
+  model         String
+  result        Json
+  usage         Json
+  createdAt     DateTime @default(now()) @db.Timestamptz
+
+  repository Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+
+  @@index([repositoryId, createdAt])
+  @@map("narratives")
+}
