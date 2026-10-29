@@ -1,5 +1,6 @@
 import { Injectable, type OnApplicationBootstrap } from '@nestjs/common';
 import { PinoLogger } from 'nestjs-pino';
+import { errorLogFields } from '../github/github.errors';
 import { PrismaService } from '../prisma/prisma.service';
 import { SyncJobExecutor } from './sync-job.executor';
 
@@ -36,39 +37,34 @@ export class SyncRunner implements OnApplicationBootstrap {
     }
   }
 
-  /** Schedules the job; never runs it inline and never rejects. */
-  enqueue(jobId: string): void {
+  /**
+   * Appends the job to its repository's chain synchronously, so jobs for one
+   * repo start in enqueue order. Never runs the job inline and never rejects.
+   */
+  enqueue(jobId: string, repositoryId: number): void {
     this.pending++;
-    void this.schedule(jobId)
+    const previous = this.chains.get(repositoryId) ?? Promise.resolve();
+    const current: Promise<void> = previous
+      .then(() => this.executor.run(jobId))
       .catch((err: unknown) =>
-        this.logger.error({ err, jobId }, 'sync job crashed outside executor'),
+        this.logger.error(
+          { jobId, ...errorLogFields(err) },
+          'sync job crashed outside executor',
+        ),
       )
-      .finally(() => this.settle());
+      .finally(() => {
+        if (this.chains.get(repositoryId) === current) {
+          this.chains.delete(repositoryId);
+        }
+        this.settle();
+      });
+    this.chains.set(repositoryId, current);
   }
 
   /** Resolves once no job is queued or running. */
   whenIdle(): Promise<void> {
     if (this.pending === 0) return Promise.resolve();
     return new Promise((resolve) => this.idleWaiters.push(resolve));
-  }
-
-  private async schedule(jobId: string): Promise<void> {
-    const { repositoryId } = await this.prisma.syncJob.findUniqueOrThrow({
-      where: { id: jobId },
-      select: { repositoryId: true },
-    });
-    const previous = this.chains.get(repositoryId) ?? Promise.resolve();
-    const current = previous.then(() => this.executor.run(jobId));
-    // The chain itself must never reject, or later jobs would be skipped.
-    const tail = current.catch(() => undefined);
-    this.chains.set(repositoryId, tail);
-    try {
-      await current;
-    } finally {
-      if (this.chains.get(repositoryId) === tail) {
-        this.chains.delete(repositoryId);
-      }
-    }
   }
 
   private settle(): void {

@@ -109,7 +109,8 @@ export class SyncService {
       return { job, created: true };
     });
 
-    if (result.created) this.runner.enqueue(result.job.id);
+    if (result.created)
+      this.runner.enqueue(result.job.id, result.job.repositoryId);
     return result;
   }
 

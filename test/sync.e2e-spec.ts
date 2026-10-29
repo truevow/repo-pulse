@@ -17,15 +17,21 @@ import { SyncRunner } from '../src/ingestion/sync-runner';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { FakeGitHubClient } from './fakes/fake-github.client';
 import {
+  COMMITS,
   FINAL_RATE_LIMIT_REMAINING,
+  LATE_COMMIT,
   NAME,
   OWNER,
   PR_PAGE_1,
   REVIEW_OVERFLOW_CURSOR,
   WINDOW,
+  commitsResult,
   repositoryResult,
   smallRepoResponses,
 } from './fixtures/github/small-repo';
+import { inspect } from 'node:util';
+import { PinoLogger } from 'nestjs-pino';
+import { defaultWindow } from '../src/signals/buckets';
 import { createTestApp, resetDatabase } from './setup/db';
 
 const PROBLEM = 'https://repo-pulse.local/problems/';
@@ -184,7 +190,7 @@ describe('Sync (e2e)', () => {
     ).toHaveLength(1);
     expect(
       calls.find((c) => c.document === COMMITS_QUERY)?.variables,
-    ).toMatchObject({ since: backfillJob.startedAt, until: iso(WINDOW.to) });
+    ).toMatchObject({ since: iso(WINDOW.to), until: iso(WINDOW.to) });
     repo = await repository();
     expect(repo.coveredFrom).toEqual(new Date(iso(wider.from)));
     expect(repo.lastSyncedAt?.toISOString()).toBe(incrementalJob.startedAt);
@@ -195,11 +201,13 @@ describe('Sync (e2e)', () => {
     const release = fake.hold(PULL_REQUESTS_QUERY);
     let first: request.Response;
     try {
-      first = await sync().expect(202);
+      first = await sync(WINDOW).expect(202);
       await waitFor(() => fake.callsTo(PULL_REQUESTS_QUERY).length === 1);
       expect((await getJob(first.body.id)).status).toBe('running');
 
-      const second = await sync({ from: '2026-08-03' }).expect(200);
+      const second = await sync({ from: '2026-08-03', to: WINDOW.to }).expect(
+        200,
+      );
       expect(second.body.id).toBe(first.body.id);
       expect(second.body.status).toBe('running');
       expect(second.headers.location).toBeUndefined();
@@ -213,6 +221,51 @@ describe('Sync (e2e)', () => {
       status: 'succeeded',
       counts: ALL_COUNTS,
     });
+  });
+
+  it('uses the default window for an empty body', async () => {
+    const expected = defaultWindow(new Date());
+    const res = await sync().expect(202);
+    expect(res.body.window).toEqual({
+      from: expected.from.toISOString(),
+      to: expected.to.toISOString(),
+    });
+    await runner.whenIdle();
+    expect((await getJob(res.body.id)).status).toBe('succeeded');
+  });
+
+  it("starts an incremental job's commit query at the previous coverage end", async () => {
+    fake = new FakeGitHubClient({
+      ...smallRepoResponses(),
+      [COMMITS_QUERY]: (vars) => commitsResult(vars, [...COMMITS, LATE_COMMIT]),
+    });
+    use(fake);
+    const a = await sync(WINDOW).expect(202);
+    await runner.whenIdle();
+    const jobA = await getJob(a.body.id);
+    expect(jobA.counts.commits).toBe(2);
+    const coveredToA = (await repository()).coveredTo!.toISOString();
+    expect(coveredToA).toBe(iso(WINDOW.to));
+    // LATE_COMMIT is dated between A.to and A.startedAt.
+    expect(Date.parse(LATE_COMMIT.committedDate)).toBeLessThan(
+      Date.parse(jobA.startedAt),
+    );
+
+    const windowB = { from: WINDOW.from, to: '2026-10-28' };
+    const b = await sync(windowB).expect(202);
+    expect(b.body.mode).toBe('incremental');
+    await runner.whenIdle();
+    const jobB = await getJob(b.body.id);
+    expect(jobB).toMatchObject({ status: 'succeeded', counts: { commits: 1 } });
+
+    expect(fake.callsTo(COMMITS_QUERY).at(-1)).toMatchObject({
+      since: coveredToA,
+      until: iso(windowB.to),
+    });
+    expect(
+      await prisma.commit.findFirst({ where: { sha: LATE_COMMIT.oid } }),
+    ).not.toBeNull();
+    expect((await repository()).coveredTo).toEqual(new Date(iso(windowB.to)));
   });
 
   it.each([
@@ -304,8 +357,20 @@ describe('Sync (e2e)', () => {
         ],
       }),
     );
+    const logged = jest.spyOn(PinoLogger.prototype, 'error');
     const res = await sync(WINDOW).expect(202);
     await runner.whenIdle();
+    const jobLogs = logged.mock.calls.filter((args) =>
+      inspect(args).includes(res.body.id),
+    );
+    logged.mockRestore();
+    expect(jobLogs).toHaveLength(1);
+    expect(jobLogs[0][0]).toEqual({
+      jobId: res.body.id,
+      kind: 'unavailable',
+      status: undefined,
+    });
+    expect(inspect(jobLogs, { depth: 10 })).not.toContain('secret-xyz');
 
     const job = await getJob(res.body.id);
     expect(job).toMatchObject({

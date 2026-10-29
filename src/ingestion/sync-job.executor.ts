@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { Prisma, Repository, SyncJob } from '@prisma/client';
 import { PinoLogger } from 'nestjs-pino';
 import { GITHUB_CLIENT, type GitHubClient } from '../github/github.client';
-import { GitHubError } from '../github/github.errors';
+import { errorLogFields, GitHubError } from '../github/github.errors';
 import type {
   CommitsResult,
   IssuesResult,
@@ -42,15 +42,12 @@ interface JobContext {
   name: string;
   since: Date;
   until: Date;
+  /** Commits are filtered by committed date, not update time; see ingest(). */
+  commitsSince: Date;
 }
 
 /** Per-page transactions upsert up to 50 PRs with 30 reviews each. */
 const PAGE_TX = { timeout: 60_000 };
-
-/** The real client exposes the last seen rate limit; the interface does not. */
-function clientRateLimit(client: GitHubClient): RateLimit | null {
-  return (client as { lastRateLimit?: RateLimit | null }).lastRateLimit ?? null;
-}
 
 function lost(): GitHubError {
   return new GitHubError('not_found', 'Repository disappeared during sync');
@@ -78,7 +75,7 @@ export class SyncJobExecutor {
       await this.ingest(job, job.repository);
       await this.succeed(job, startedAt);
     } catch (err) {
-      this.logger.error({ err, jobId }, 'sync job failed');
+      this.logger.error({ jobId, ...errorLogFields(err) }, 'sync job failed');
       await this.prisma.syncJob.update({
         where: { id: jobId },
         data: {
@@ -91,16 +88,21 @@ export class SyncJobExecutor {
   }
 
   private async ingest(job: SyncJob, repo: Repository): Promise<void> {
+    const incremental = job.mode === 'incremental';
     const ctx: JobContext = {
       jobId: job.id,
       repositoryId: repo.id,
       owner: repo.owner,
       name: repo.name,
-      since:
-        job.mode === 'incremental'
-          ? (repo.lastSyncedAt ?? job.requestedFrom)
-          : job.requestedFrom,
+      since: incremental
+        ? (repo.lastSyncedAt ?? job.requestedFrom)
+        : job.requestedFrom,
       until: job.requestedTo,
+      // The previous job fetched commits only up to its requestedTo, which is
+      // before its startedAt (lastSyncedAt), so resume from the coverage end.
+      commitsSince: incremental
+        ? (repo.coveredTo ?? repo.lastSyncedAt ?? job.requestedFrom)
+        : job.requestedFrom,
     };
     if (repo.hasPullRequests) await this.syncPullRequests(ctx);
     if (repo.hasIssuesEnabled) await this.syncIssues(ctx);
@@ -194,7 +196,7 @@ export class SyncJobExecutor {
       const result: CommitsResult = await this.github.query(COMMITS_QUERY, {
         owner: ctx.owner,
         name: ctx.name,
-        since: ctx.since.toISOString(),
+        since: ctx.commitsSince.toISOString(),
         until: ctx.until.toISOString(),
         cursor,
       });
@@ -256,7 +258,7 @@ export class SyncJobExecutor {
     rateLimit: RateLimit | undefined,
   ): Promise<void> {
     const remaining =
-      rateLimit?.remaining ?? clientRateLimit(this.github)?.remaining;
+      rateLimit?.remaining ?? this.github.lastRateLimit?.remaining;
     await tx.syncJob.update({
       where: { id: jobId },
       data: {

@@ -221,6 +221,18 @@ export const COMMITS: CommitNode[] = [
   },
 ];
 
+/**
+ * Committed after WINDOW.to but before a sync of WINDOW starts: only a later
+ * incremental sync can pick it up (opt-in via `commitsResult`).
+ */
+export const LATE_COMMIT: CommitNode = {
+  oid: 'c'.repeat(40),
+  committedDate: '2026-10-27T12:00:00Z',
+  additions: 5,
+  deletions: 0,
+  author: { name: 'Bob B.', email: 'bob@example.com', user: { login: 'bob' } },
+};
+
 export function repositoryResult(
   overrides: Partial<{
     hasIssuesEnabled: boolean;
@@ -241,10 +253,13 @@ export function repositoryResult(
 }
 
 /** Commits whose committedDate lies in `[since, until]`, like GitHub's history filter. */
-export function commitsResult(vars: Record<string, unknown>): CommitsResult {
+export function commitsResult(
+  vars: Record<string, unknown>,
+  commits: CommitNode[] = COMMITS,
+): CommitsResult {
   const since = Date.parse(String(vars.since));
   const until = Date.parse(String(vars.until));
-  const nodes = COMMITS.filter((c) => {
+  const nodes = commits.filter((c) => {
     const t = Date.parse(c.committedDate);
     return t >= since && t <= until;
   });
@@ -273,6 +288,6 @@ export function smallRepoResponses(
       vars.cursor === PR_PAGE_1_CURSOR ? PR_PAGE_2 : PR_PAGE_1,
     [PULL_REQUEST_REVIEWS_QUERY]: () => REVIEW_OVERFLOW_PAGE,
     [ISSUES_QUERY]: () => ISSUE_PAGE,
-    [COMMITS_QUERY]: commitsResult,
+    [COMMITS_QUERY]: (vars) => commitsResult(vars),
   };
 }
