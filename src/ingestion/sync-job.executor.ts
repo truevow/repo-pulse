@@ -74,6 +74,15 @@ export class SyncJobExecutor {
     try {
       await this.ingest(job, job.repository);
       await this.succeed(job, startedAt);
+      this.logger.info(
+        {
+          jobId,
+          durationMs: Date.now() - startedAt.getTime(),
+          rssMb: Math.round(process.memoryUsage().rss / 1_048_576),
+          rateLimitRemaining: this.github.lastRateLimit?.remaining ?? null,
+        },
+        'sync job succeeded',
+      );
     } catch (err) {
       this.logger.error({ jobId, ...errorLogFields(err) }, 'sync job failed');
       await this.prisma.syncJob.update({
