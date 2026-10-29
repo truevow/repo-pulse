@@ -191,4 +191,50 @@ describe('GitHubGraphqlClient', () => {
       expect((err as Error).message).not.toContain(TOKEN);
     }
   });
+
+  it('treats a 200 with an HTML body as transient and ends in unavailable', async () => {
+    const html = () =>
+      new Response('<html>proxy error</html>', {
+        status: 200,
+        headers: { 'content-type': 'text/html' },
+      });
+    const { client, fetchImpl } = setup([html(), html()], { maxRetries: 2 });
+    await expect(client.query('q', {})).rejects.toMatchObject({
+      kind: 'unavailable',
+    });
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  it('treats a 200 with data null and no errors as transient', async () => {
+    const { client, fetchImpl, sleep } = setup([
+      res({ data: null }),
+      res({ data: { rateLimit: rl(100) } }),
+    ]);
+    await client.query('q', {});
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(sleep.mock.calls.map((c) => c[0])).toEqual([500]);
+  });
+
+  it('honours retry-after (seconds) instead of exponential backoff, capped at 120s', async () => {
+    const withRetryAfter = (v: string, status = 403) =>
+      new Response('{}', { status, headers: { 'retry-after': v } });
+    const { client, sleep } = setup([
+      withRetryAfter('60'),
+      withRetryAfter('9999', 429),
+      res({ data: { rateLimit: rl(100) } }),
+    ]);
+    await client.query('q', {});
+    expect(sleep.mock.calls.map((c) => c[0])).toEqual([60_000, 120_000]);
+  });
+
+  it('redacts a token embedded in a graphql error message but keeps the rest', async () => {
+    const { client } = setup([
+      res({ errors: [{ type: 'X', message: `bad value ${TOKEN} here` }] }),
+    ]);
+    const err = (await client.query('q', {}).catch((e: Error) => e)) as Error;
+    expect(err).toBeInstanceOf(GitHubError);
+    expect(err.message).not.toContain(TOKEN);
+    expect(err.message).toContain('bad value');
+    expect(err.message).toContain('here');
+  });
 });

@@ -6,6 +6,7 @@ import type { RateLimit } from './github.types';
 const ENDPOINT = 'https://api.github.com/graphql';
 const BASE_DELAY_MS = 500;
 const JITTER = 0.2;
+const MAX_RETRY_AFTER_MS = 120_000;
 
 export interface GitHubGraphqlClientOptions {
   token: string;
@@ -36,6 +37,7 @@ class Retryable {
   constructor(
     readonly reason: string,
     readonly status?: number,
+    readonly retryAfterMs?: number,
   ) {}
 }
 
@@ -77,7 +79,7 @@ export class GitHubGraphqlClient implements GitHubClient {
       if (!(outcome instanceof Retryable)) return outcome.value;
       last = outcome;
       if (attempt < this.maxRetries - 1) {
-        await this.sleep(this.backoffMs(attempt));
+        await this.sleep(last.retryAfterMs ?? this.backoffMs(attempt));
       }
     }
     throw new GitHubError(
@@ -126,11 +128,19 @@ export class GitHubGraphqlClient implements GitHubClient {
       throw new GitHubError('unauthorized', 'GitHub rejected credentials', 401);
     }
     if (status === 429 || status >= 500) {
-      return new Retryable(`HTTP ${status}`, status);
+      return new Retryable(
+        `HTTP ${status}`,
+        status,
+        this.retryAfterMs(response),
+      );
     }
     if (status === 403) {
       if (this.isRateLimited403(response, body)) {
-        return new Retryable('rate limited', status);
+        return new Retryable(
+          'rate limited',
+          status,
+          this.retryAfterMs(response),
+        );
       }
       throw new GitHubError('forbidden', 'GitHub access forbidden', 403);
     }
@@ -153,7 +163,12 @@ export class GitHubGraphqlClient implements GitHubClient {
       );
     }
     const errors = body.errors ?? [];
-    if (errors.length === 0) return { value: body.data as T };
+    if (errors.length === 0) {
+      if (!body.data || typeof body.data !== 'object') {
+        return new Retryable('response had no usable data', status);
+      }
+      return { value: body.data as T };
+    }
     if (errors.some((e) => e.type === 'RATE_LIMITED')) {
       return new Retryable('rate limited', status);
     }
@@ -166,6 +181,13 @@ export class GitHubGraphqlClient implements GitHubClient {
       .split(this.token)
       .join('[redacted]');
     throw new GitHubError('bad_query', message, status);
+  }
+
+  /** Honours a `retry-after` header (seconds), capped at 120 s. */
+  private retryAfterMs(response: Response): number | undefined {
+    const seconds = Number(response.headers.get('retry-after'));
+    if (!Number.isFinite(seconds) || seconds <= 0) return undefined;
+    return Math.min(seconds * 1000, MAX_RETRY_AFTER_MS);
   }
 
   private isRateLimited403(response: Response, body: GraphqlBody): boolean {
