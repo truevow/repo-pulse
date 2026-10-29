@@ -86,12 +86,13 @@ export class ProblemDetailsFilter implements ExceptionFilter {
     };
   }
 
+  /** Any status without a dedicated type is `internal`, with its real status. */
   private typeFor(status: number): ProblemInit['type'] {
+    if (status === 400 || status === 422) return 'validation-error';
     if (status === 404) return 'not-found';
     if (status === 409) return 'conflict';
     if (status === 429) return 'rate-limited';
-    if (status >= 500) return 'internal';
-    return 'validation-error';
+    return 'internal';
   }
 }
 

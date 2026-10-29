@@ -69,6 +69,23 @@ describe('ProblemDetailsFilter', () => {
     expect(body().type).toMatch(/\/conflict$/);
   });
 
+  it('keeps validation-error for 400 and 422 only; other 4xx keep their status as internal', () => {
+    for (const status of [400, 422]) {
+      const { filter, host, res, body } = setup();
+      filter.catch(new HttpException('bad', status), host);
+      expect(res.status).toHaveBeenCalledWith(status);
+      expect(body().type).toMatch(/\/validation-error$/);
+    }
+    const { filter, host, res, body } = setup();
+    filter.catch(new HttpException('Method Not Allowed', 405), host);
+    expect(res.status).toHaveBeenCalledWith(405);
+    expect(body()).toMatchObject({
+      status: 405,
+      title: 'Method Not Allowed',
+      type: 'https://repo-pulse.local/problems/internal',
+    });
+  });
+
   it('maps ThrottlerException to 429 rate-limited with Retry-After', () => {
     const { filter, host, res, body } = setup();
     filter.catch(new ThrottlerException(), host);

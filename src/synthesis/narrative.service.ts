@@ -70,6 +70,18 @@ function toProblem(err: unknown): unknown {
       headers: { 'Retry-After': RETRY_AFTER_S },
     });
   }
+  // Any other provider error (bad request, unknown model, permission denied):
+  // the status only; the provider's message may echo request details.
+  if (err instanceof Anthropic.APIError) {
+    const reason = `upstream_${err.status ?? 'error'}`;
+    return new ProblemException({
+      status: 502,
+      type: 'synthesis-failed',
+      title: 'Synthesis failed',
+      detail: reason,
+      extensions: { reason },
+    });
+  }
   return err;
 }
 

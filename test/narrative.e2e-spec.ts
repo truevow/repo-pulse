@@ -378,6 +378,33 @@ describe('Narrative (e2e)', () => {
     expect(auth.headers['retry-after']).toBeUndefined();
   });
 
+  it('502 synthesis-failed upstream_<status> for any other provider error, without its message', async () => {
+    fake.reset([
+      new Anthropic.NotFoundError(
+        404,
+        { message: 'model: claude-typo not found' },
+        'model: claude-typo not found',
+        new Headers(),
+      ),
+      new Anthropic.BadRequestError(
+        400,
+        { message: 'prompt too long' },
+        'prompt too long',
+        new Headers(),
+      ),
+    ]);
+
+    const missing = await narrative();
+    expectProblem(missing, 502, 'synthesis-failed');
+    expect(missing.body.detail).toBe('upstream_404');
+    expect(JSON.stringify(missing.body)).not.toContain('claude-typo');
+
+    const bad = await narrative();
+    expectProblem(bad, 502, 'synthesis-failed');
+    expect(bad.body.detail).toBe('upstream_400');
+    expect(JSON.stringify(bad.body)).not.toContain('prompt too long');
+  });
+
   it('caps confidence for a window beyond coverage (partial_data)', async () => {
     const wide = { from: W1, to: '2026-10-26' };
     const wideBody = await insights(wide);

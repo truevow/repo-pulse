@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { SyncMode } from '@prisma/client';
+import { Prisma, type SyncMode } from '@prisma/client';
 import { ProblemException } from '../common/problem.exception';
 import { GITHUB_CLIENT, type GitHubClient } from '../github/github.client';
 import { GitHubError } from '../github/github.errors';
@@ -33,6 +33,12 @@ function githubProblem(err: GitHubError): ProblemException {
         detail: err.kind,
       });
   }
+}
+
+function isUniqueViolation(err: unknown): boolean {
+  return (
+    err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002'
+  );
 }
 
 function repoNotFound(): ProblemException {
@@ -76,12 +82,34 @@ export class SyncService {
       hasPullRequests: meta.pullRequests.totalCount > 0,
     };
 
-    const result = await this.prisma.$transaction(async (tx) => {
+    // Two first-ever requests for a repo can both miss the upsert's WHERE
+    // and race on INSERT; the loser hits the githubId unique key (P2002).
+    // One retry then finds the winner's row and takes the UPDATE path.
+    let result: { job: SyncJobWithRepository; created: boolean };
+    try {
+      result = await this.createOrJoinJob(meta.id, metadata, window);
+    } catch (err) {
+      if (!isUniqueViolation(err)) throw err;
+      result = await this.createOrJoinJob(meta.id, metadata, window);
+    }
+
+    if (result.created)
+      this.runner.enqueue(result.job.id, result.job.repositoryId);
+    return result;
+  }
+
+  /** In one transaction: upsert the repository, then join or create its job. */
+  private createOrJoinJob(
+    githubId: string,
+    metadata: Omit<Prisma.RepositoryCreateInput, 'githubId'>,
+    window: Window,
+  ): Promise<{ job: SyncJobWithRepository; created: boolean }> {
+    return this.prisma.$transaction(async (tx) => {
       // The upsert's UPDATE row-locks an existing repository, so concurrent
       // requests for it serialise on the active-job check below.
       const repository = await tx.repository.upsert({
-        where: { githubId: meta.id },
-        create: { githubId: meta.id, ...metadata },
+        where: { githubId },
+        create: { githubId, ...metadata },
         update: metadata,
       });
       const active = await tx.syncJob.findFirst({
@@ -108,10 +136,6 @@ export class SyncService {
       });
       return { job, created: true };
     });
-
-    if (result.created)
-      this.runner.enqueue(result.job.id, result.job.repositoryId);
-    return result;
   }
 
   getJob(id: string): Promise<SyncJobWithRepository | null> {

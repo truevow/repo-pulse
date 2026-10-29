@@ -5,7 +5,7 @@ import type { GroundingResult } from './grounding';
 import type { ModelUsage } from './model-runner';
 
 export interface NarrativeUsage extends ModelUsage {
-  /** Estimated from list prices; see `costUsd` in narrative.service.ts. */
+  /** Estimated from list prices; see `costUsd` in cost.ts. */
   costUsd: number;
 }
 
