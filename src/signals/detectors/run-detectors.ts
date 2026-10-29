@@ -30,10 +30,18 @@ const DETECTOR_RANK: Record<Detector, number> = {
   robust_outlier: 3,
 };
 
-/** True when `a` should replace `b`: larger |score|, then higher severity, then more specific detector. */
+const namesEntity = (s: Signal): number => (s.entity === null ? 0 : 1);
+
+/**
+ * True when `a` should replace `b`: a signal naming an entity first (scores
+ * are not comparable across detectors, and a concentration share would always
+ * lose to the z of an outlier on the same cell, dropping the reviewer), then
+ * larger |score|, then higher severity, then more specific detector.
+ */
 function beats(a: Signal, b: Signal): boolean {
   return (
-    (Math.abs(a.score) - Math.abs(b.score) ||
+    (namesEntity(a) - namesEntity(b) ||
+      Math.abs(a.score) - Math.abs(b.score) ||
       SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity] ||
       DETECTOR_RANK[b.detector] - DETECTOR_RANK[a.detector]) > 0
   );

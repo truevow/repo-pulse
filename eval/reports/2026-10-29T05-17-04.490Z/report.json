@@ -1,0 +1,2484 @@
+{
+  "promptVersion": "v1",
+  "model": "claude-opus-5-5",
+  "effort": "medium",
+  "runs": 3,
+  "date": "2026-10-29T05:17:04.490Z",
+  "dry": false,
+  "caseFilter": null,
+  "controlMeanTopConfidence": 0,
+  "summaries": [
+    {
+      "name": "control",
+      "passRates": {
+        "schema_and_grounding": 1,
+        "names_planted_metric": null,
+        "confidence_ordering": 1,
+        "unverified_numbers": 1
+      },
+      "meanTopConfidence": 0,
+      "meanInputTokens": 4,
+      "meanOutputTokens": 589,
+      "meanCacheReadTokens": 5586,
+      "meanCacheWriteTokens": 536,
+      "meanLatencyMs": 7740,
+      "meanToolCalls": 0,
+      "meanCostUsd": 0.015586,
+      "totalCostUsd": 0.046759,
+      "failedRuns": 0
+    },
+    {
+      "name": "latency_spike",
+      "passRates": {
+        "schema_and_grounding": 1,
+        "names_planted_metric": 1,
+        "confidence_ordering": 1,
+        "unverified_numbers": 0.33
+      },
+      "meanTopConfidence": 0.57,
+      "meanInputTokens": 8,
+      "meanOutputTokens": 1944,
+      "meanCacheReadTokens": 25146,
+      "meanCacheWriteTokens": 4004,
+      "meanLatencyMs": 21282,
+      "meanToolCalls": 5,
+      "meanCostUsd": 0.063966,
+      "totalCostUsd": 0.191899,
+      "failedRuns": 0
+    },
+    {
+      "name": "reviewer_dropout",
+      "passRates": {
+        "schema_and_grounding": 1,
+        "names_planted_metric": 1,
+        "confidence_ordering": 1,
+        "unverified_numbers": 0.67
+      },
+      "meanTopConfidence": 0.6,
+      "meanInputTokens": 7,
+      "meanOutputTokens": 1602,
+      "meanCacheReadTokens": 22957,
+      "meanCacheWriteTokens": 3567,
+      "meanLatencyMs": 18124,
+      "meanToolCalls": 3.33,
+      "meanCostUsd": 0.054491,
+      "totalCostUsd": 0.163474,
+      "failedRuns": 0
+    },
+    {
+      "name": "throughput_shift",
+      "passRates": {
+        "schema_and_grounding": 1,
+        "names_planted_metric": 1,
+        "confidence_ordering": 1,
+        "unverified_numbers": 1
+      },
+      "meanTopConfidence": 0.55,
+      "meanInputTokens": 7,
+      "meanOutputTokens": 2024,
+      "meanCacheReadTokens": 26996,
+      "meanCacheWriteTokens": 3995,
+      "meanLatencyMs": 20108,
+      "meanToolCalls": 4.33,
+      "meanCostUsd": 0.06589,
+      "totalCostUsd": 0.197671,
+      "failedRuns": 0
+    },
+    {
+      "name": "concentration",
+      "passRates": {
+        "schema_and_grounding": 1,
+        "names_planted_metric": 1,
+        "confidence_ordering": 1,
+        "unverified_numbers": 0.33
+      },
+      "meanTopConfidence": 0.63,
+      "meanInputTokens": 7,
+      "meanOutputTokens": 1271,
+      "meanCacheReadTokens": 19157,
+      "meanCacheWriteTokens": 1996,
+      "meanLatencyMs": 15354,
+      "meanToolCalls": 3,
+      "meanCostUsd": 0.039262,
+      "totalCostUsd": 0.117787,
+      "failedRuns": 0
+    },
+    {
+      "name": "commit_only",
+      "passRates": {
+        "schema_and_grounding": 1,
+        "names_planted_metric": null,
+        "confidence_ordering": 1,
+        "unverified_numbers": 0
+      },
+      "meanTopConfidence": 0,
+      "meanInputTokens": 4,
+      "meanOutputTokens": 355,
+      "meanCacheReadTokens": 5413,
+      "meanCacheWriteTokens": 449,
+      "meanLatencyMs": 5195,
+      "meanToolCalls": 0,
+      "meanCostUsd": 0.010438,
+      "totalCostUsd": 0.031315,
+      "failedRuns": 0
+    }
+  ],
+  "totals": {
+    "runs": 18,
+    "failedRuns": 0,
+    "passRates": {
+      "schema_and_grounding": 1,
+      "names_planted_metric": 1,
+      "confidence_ordering": 1,
+      "unverified_numbers": 0.56
+    },
+    "inputTokens": 112,
+    "outputTokens": 23355,
+    "cacheReadTokens": 315765,
+    "cacheWriteTokens": 43641,
+    "costUsd": 0.748905
+  },
+  "failures": [
+    {
+      "case": "latency_spike",
+      "run": 1,
+      "check": "unverified_numbers",
+      "reason": "5: 6.29, 10, 15, 5.875, 3"
+    },
+    {
+      "case": "latency_spike",
+      "run": 3,
+      "check": "unverified_numbers",
+      "reason": "5: 29.89, 25, 38, 39, 3"
+    },
+    {
+      "case": "reviewer_dropout",
+      "run": 2,
+      "check": "unverified_numbers",
+      "reason": "5: 6, 25, 12, 6.383333333333333, 11.141666666666666"
+    },
+    {
+      "case": "concentration",
+      "run": 1,
+      "check": "unverified_numbers",
+      "reason": "3: 11, 12, 0.3408304498269896"
+    },
+    {
+      "case": "concentration",
+      "run": 2,
+      "check": "unverified_numbers",
+      "reason": "6: 20, 22, 40, 0.3408304498269896, 11, 16"
+    },
+    {
+      "case": "commit_only",
+      "run": 1,
+      "check": "unverified_numbers",
+      "reason": "8: 6, 21, 27, 4, 2, 53, 45, 42"
+    },
+    {
+      "case": "commit_only",
+      "run": 2,
+      "check": "unverified_numbers",
+      "reason": "8: 6, 21, 27, 4, 2, 53, 45, 42"
+    },
+    {
+      "case": "commit_only",
+      "run": 3,
+      "check": "unverified_numbers",
+      "reason": "8: 6, 21, 27, 4, 2, 53, 45, 42"
+    }
+  ],
+  "cases": [
+    {
+      "name": "control",
+      "expect": {
+        "control": true
+      },
+      "seed": 5,
+      "perturbations": [],
+      "snapshot": {
+        "pullRequests": 205,
+        "reviews": 303,
+        "issues": 42,
+        "commits": 191
+      },
+      "window": {
+        "from": "2026-08-31T00:00:00.000Z",
+        "to": "2026-10-26T00:00:00.000Z"
+      },
+      "signals": [],
+      "runs": [
+        {
+          "run": 1,
+          "ok": true,
+          "problem": null,
+          "latencyMs": 8646,
+          "generationMs": 8622,
+          "toolCalls": 0,
+          "turns": 1,
+          "model": "claude-opus-5-5",
+          "usage": {
+            "inputTokens": 4,
+            "outputTokens": 560,
+            "cacheReadTokens": 4514,
+            "cacheWriteTokens": 1608,
+            "costUsd": 0.020159
+          },
+          "topConfidence": 0,
+          "headline": "Steady quarter: review speed, throughput and review load stayed flat, with no unusual changes",
+          "narrative": "No detector fired in this window, and the weekly numbers back that up. Pull requests opened, merged and closed without merging held steady every week. Median time to first review stayed within a few hours each week, and median time to merge stayed at roughly a day to a day and a half. Reviews were shared fairly evenly among bob, carol and alice, and the top reviewer's share never rose far above its usual level. dave is one of the most active authors but does not appear on the reviewer leaderboard, so three people do all the reviewing. Issues were opened a little faster than they were closed every week, so the issue backlog is growing slowly. That is worth keeping an eye on, but it is not a sudden change.",
+          "hypotheses": [],
+          "dataCaveats": [
+            "No signals were raised and no tools were called, so this briefing rests only on the weekly metrics table and the leaderboards for the whole window.",
+            "All buckets are complete and the sync covers the full window. Bots are excluded.",
+            "The reviewer leaderboard shows only three reviewers. Reviews from anyone else, if there were any, are too few to appear on it."
+          ],
+          "grounding": {
+            "status": "ok",
+            "rejected": [],
+            "unverifiedNumbers": [],
+            "droppedHypotheses": 0
+          },
+          "checks": {
+            "schema_and_grounding": {
+              "pass": true,
+              "reason": "schema valid, no evidence rejected"
+            },
+            "names_planted_metric": {
+              "pass": null,
+              "reason": "control case"
+            },
+            "confidence_ordering": {
+              "pass": true,
+              "reason": "no hypotheses"
+            },
+            "unverified_numbers": {
+              "pass": true,
+              "reason": "none"
+            }
+          }
+        },
+        {
+          "run": 2,
+          "ok": true,
+          "problem": null,
+          "latencyMs": 7037,
+          "generationMs": 7010,
+          "toolCalls": 0,
+          "turns": 1,
+          "model": "claude-opus-5-5",
+          "usage": {
+            "inputTokens": 4,
+            "outputTokens": 576,
+            "cacheReadTokens": 6122,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.01276
+          },
+          "topConfidence": 0,
+          "headline": "Steady quarter: review speed, throughput and review load held flat, and no detector fired",
+          "narrative": "Collaboration in evalco/service-5 was stable across all eight weeks. PRs were opened and merged at a steady weekly pace, with very few closed unmerged. The median time to first review stayed within a few hours each week, and the median time to merge stayed at roughly one to one and a half days. Reviewing was shared fairly evenly between bob, carol and alice, and no single reviewer dominated any week. dave merged a similar number of PRs to the others but does not appear among the reviewers, so all review work sat with the other three people. One thing to keep an eye on: issues were opened a little faster than they were closed every week, so the issue backlog is growing slowly.",
+          "hypotheses": [],
+          "dataCaveats": [
+            "No detector signals were raised, so this briefing is a plain read of the weekly table and leaderboards and does not test any root-cause claims.",
+            "Sync covers the whole window and no bucket is marked partial. Bot activity is excluded.",
+            "There are only four active authors and three reviewers, so a short absence by any one person would show up quickly in review latency and concentration."
+          ],
+          "grounding": {
+            "status": "ok",
+            "rejected": [],
+            "unverifiedNumbers": [
+              5
+            ],
+            "droppedHypotheses": 0
+          },
+          "checks": {
+            "schema_and_grounding": {
+              "pass": true,
+              "reason": "schema valid, no evidence rejected"
+            },
+            "names_planted_metric": {
+              "pass": null,
+              "reason": "control case"
+            },
+            "confidence_ordering": {
+              "pass": true,
+              "reason": "no hypotheses"
+            },
+            "unverified_numbers": {
+              "pass": true,
+              "reason": "1: 5"
+            }
+          }
+        },
+        {
+          "run": 3,
+          "ok": true,
+          "problem": null,
+          "latencyMs": 7536,
+          "generationMs": 7505,
+          "toolCalls": 0,
+          "turns": 1,
+          "model": "claude-opus-5-5",
+          "usage": {
+            "inputTokens": 4,
+            "outputTokens": 630,
+            "cacheReadTokens": 6122,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.01384
+          },
+          "topConfidence": 0,
+          "headline": "Collaboration in evalco/service-5 held steady over the eight weeks and no detector flagged anything unusual",
+          "narrative": "No detector fired between 2026-08-31 and 2026-10-26, and the weekly numbers support that. Pull request throughput, time to first review and time to merge all stayed within a narrow range from week to week, with no trend or spike. Reviews are spread fairly evenly across bob, carol and alice, and no single reviewer dominates any week. One structural point is that dave merges a similar volume of code to the others but does not appear among the reviewers, so all review work falls on the other three. Separately, slightly more issues are opened each week than closed, so the issue backlog is likely growing slowly. Neither point is a change within this window, so I have not offered a root-cause hypothesis.",
+          "hypotheses": [],
+          "dataCaveats": [
+            "No detector signals fired, so no tool-based drill-down was needed and I made no causal claims.",
+            "Bots were excluded (includeBots false), so automated review or merge activity is not counted.",
+            "The issue backlog growth comes from comparing weekly opened and closed counts. It is not a measured backlog size.",
+            "The reviewer leaderboard lists only bob, carol and alice. dave's absence suggests he did few or no reviews in this window, but his per-week review activity was not checked."
+          ],
+          "grounding": {
+            "status": "ok",
+            "rejected": [],
+            "unverifiedNumbers": [
+              5
+            ],
+            "droppedHypotheses": 0
+          },
+          "checks": {
+            "schema_and_grounding": {
+              "pass": true,
+              "reason": "schema valid, no evidence rejected"
+            },
+            "names_planted_metric": {
+              "pass": null,
+              "reason": "control case"
+            },
+            "confidence_ordering": {
+              "pass": true,
+              "reason": "no hypotheses"
+            },
+            "unverified_numbers": {
+              "pass": true,
+              "reason": "1: 5"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "latency_spike",
+      "expect": {
+        "metric": "time_to_first_review_p50_h",
+        "bucket": "2026-10-05"
+      },
+      "seed": 1,
+      "perturbations": [
+        {
+          "type": "latency_spike",
+          "week": 6,
+          "factor": 5
+        }
+      ],
+      "snapshot": {
+        "pullRequests": 205,
+        "reviews": 308,
+        "issues": 42,
+        "commits": 191
+      },
+      "window": {
+        "from": "2026-08-31T00:00:00.000Z",
+        "to": "2026-10-26T00:00:00.000Z"
+      },
+      "signals": [
+        {
+          "id": "bc261ce93654",
+          "detector": "robust_outlier",
+          "metric": "time_to_first_review_p50_h",
+          "bucket": "2026-10-05",
+          "entity": null,
+          "observed": 21.53333333333333,
+          "baselineMedian": 6.291666666666667,
+          "score": 15.241666666666664,
+          "severity": "high"
+        },
+        {
+          "id": "a56e7c6048a8",
+          "detector": "robust_outlier",
+          "metric": "time_to_merge_p50_h",
+          "bucket": "2026-10-05",
+          "entity": null,
+          "observed": 41.38333333333333,
+          "baselineMedian": 29.891666666666666,
+          "score": 3.8444382492333427,
+          "severity": "moderate"
+        },
+        {
+          "id": "88641b26a673",
+          "detector": "robust_outlier",
+          "metric": "issue_time_to_close_p50_h",
+          "bucket": "2026-10-19",
+          "entity": null,
+          "observed": 166.55,
+          "baselineMedian": 121.95833333333334,
+          "score": 3.063837057690376,
+          "severity": "moderate"
+        },
+        {
+          "id": "57d621d7da8a",
+          "detector": "throughput_divergence",
+          "metric": "prs_merged",
+          "bucket": "2026-10-05",
+          "entity": null,
+          "observed": 17,
+          "baselineMedian": 21,
+          "score": -1.9047619047619047,
+          "severity": "moderate"
+        }
+      ],
+      "runs": [
+        {
+          "run": 1,
+          "ok": true,
+          "problem": null,
+          "latencyMs": 18937,
+          "generationMs": 18912,
+          "toolCalls": 5,
+          "turns": 3,
+          "model": "claude-opus-5-5",
+          "usage": {
+            "inputTokens": 8,
+            "outputTokens": 1656,
+            "cacheReadTokens": 22604,
+            "cacheWriteTokens": 6192,
+            "costUsd": 0.068633
+          },
+          "topConfidence": 0.55,
+          "headline": "Review wait times spiked for one week starting 2026-10-05 when bob, one of only three reviewers, did less reviewing; things went back to normal the following week",
+          "narrative": "In the week of 2026-10-05, the median wait for a first review rose to 21.53 hours, against a typical 6.29. Merges dropped to 17 even though pull requests kept opening at the usual pace. In that same week bob, one of only three people who review, gave 7 reviews instead of his usual 10 to 15. Total reviews fell to 31, and dave's pull requests were most of the slowest ones to get a first review. dave writes the most code but does not review, so all of his work waits on alice, carol and bob. The next week first-review time was back to 5.875 hours, so this looks like a one-off capacity dip rather than a trend. The rise in issue close time in the week of 2026-10-19 rests on only 3 closed issues, so it is too small a sample to read much into.",
+          "hypotheses": [
+            {
+              "statement": "Review capacity dipped for a week because bob did fewer reviews in the week of 2026-10-05. With only three reviewers (dave reviews nothing), losing about half of one person's reviews was enough to delay first reviews, and through them merges.",
+              "confidence": 0.55,
+              "evidence": [
+                {
+                  "signal_id": "bc261ce93654",
+                  "metric": "time_to_first_review_p50_h",
+                  "bucket": "2026-10-05",
+                  "entity": null,
+                  "value": 21.53333333333333,
+                  "note": "First-review median spiked"
+                },
+                {
+                  "signal_id": null,
+                  "metric": "reviews_given",
+                  "bucket": "2026-10-05",
+                  "entity": "bob",
+                  "value": 7,
+                  "note": "bob's reviews down from his usual 10-15"
+                },
+                {
+                  "signal_id": null,
+                  "metric": "reviews_submitted",
+                  "bucket": "2026-10-05",
+                  "entity": null,
+                  "value": 31,
+                  "note": "Total reviews below the usual 38-39"
+                },
+                {
+                  "signal_id": "bc261ce93654",
+                  "metric": "time_to_first_review_p50_h.item",
+                  "bucket": "2026-10-05",
+                  "entity": "#161",
+                  "value": 84.18333333333334,
+                  "note": "Slowest wait was on a dave PR"
+                },
+                {
+                  "signal_id": "57d621d7da8a",
+                  "metric": "prs_merged",
+                  "bucket": "2026-10-05",
+                  "entity": null,
+                  "value": 17,
+                  "note": "Merges fell while opens held steady"
+                }
+              ],
+              "alternative_explanations": [
+                "Larger-than-usual pull requests that week (the throughput signal lists several PRs of roughly 450-550 lines) took longer to review",
+                "Timing of particular pull requests, such as ones opened just before a weekend, rather than any loss of capacity"
+              ],
+              "suggested_check": "Check whether bob was away or reassigned during the week of 2026-10-05, and whether dave's pull requests that week were larger than usual.",
+              "model_confidence": 0.55,
+              "adjustments": []
+            }
+          ],
+          "dataCaveats": [
+            "The issue close time signal for the week of 2026-10-19 rests on just 3 closed issues, so its median is the value of a single issue (#195).",
+            "The window has only 8 weekly buckets, so the baselines are thin.",
+            "The first-review signal's spread estimate hit its floor value, which may make the robust z-score look bigger than it is."
+          ],
+          "grounding": {
+            "status": "ok",
+            "rejected": [],
+            "unverifiedNumbers": [
+              6.29,
+              10,
+              15,
+              5.875,
+              3
+            ],
+            "droppedHypotheses": 0
+          },
+          "checks": {
+            "schema_and_grounding": {
+              "pass": true,
+              "reason": "schema valid, no evidence rejected"
+            },
+            "names_planted_metric": {
+              "pass": true,
+              "reason": "top hypothesis cites metric time_to_first_review_p50_h, bucket 2026-10-05"
+            },
+            "confidence_ordering": {
+              "pass": true,
+              "reason": "top confidence 0.55 vs control mean 0"
+            },
+            "unverified_numbers": {
+              "pass": false,
+              "reason": "5: 6.29, 10, 15, 5.875, 3"
+            }
+          }
+        },
+        {
+          "run": 2,
+          "ok": true,
+          "problem": null,
+          "latencyMs": 22225,
+          "generationMs": 22178,
+          "toolCalls": 5,
+          "turns": 3,
+          "model": "claude-opus-5-5",
+          "usage": {
+            "inputTokens": 8,
+            "outputTokens": 2075,
+            "cacheReadTokens": 26408,
+            "cacheWriteTokens": 2889,
+            "costUsd": 0.061259
+          },
+          "topConfidence": 0.55,
+          "headline": "Review and merge speed dipped for one week starting 2026-10-05, probably because bob had less time to review, and was back to normal the next week",
+          "narrative": "In the week of 2026-10-05, PRs waited a median of 21.53 hours for their first review, against a typical 6.29. Median time to merge rose to 41.38 hours, and merges fell to 17 even though new PRs held steady. Total reviews fell to 31 that week. bob, one of only three people who review, gave 7 reviews, down from his usual 10 to 15, and his own commits and merges dropped too. dave writes the most code and gives no reviews, so a smaller drop in reviewing hits his PRs hardest, and most of the slowest first reviews that week were on his PRs. The next week reviews rose to 45 and first-review time returned to 5.875 hours. The longer issue close time in the week of 2026-10-19 rests on only a few closed issues and doesn't look like a real trend yet.",
+          "hypotheses": [
+            {
+              "statement": "Review capacity dropped for a while in the week of 2026-10-05, mostly because bob was less available, in a team where only three people review and the top author (dave) does not. PRs waited longer for first review, which in turn slowed merges.",
+              "confidence": 0.55,
+              "evidence": [
+                {
+                  "signal_id": "bc261ce93654",
+                  "metric": "time_to_first_review_p50_h",
+                  "bucket": "2026-10-05",
+                  "entity": null,
+                  "value": 21.53333333333333,
+                  "note": "First-review latency spike"
+                },
+                {
+                  "signal_id": "bc261ce93654",
+                  "metric": "time_to_first_review_p50_h.baseline_median",
+                  "bucket": "2026-10-05",
+                  "entity": null,
+                  "value": 6.291666666666667,
+                  "note": "Typical first-review latency"
+                },
+                {
+                  "signal_id": null,
+                  "metric": "reviews_given",
+                  "bucket": "2026-10-05",
+                  "entity": "bob",
+                  "value": 7,
+                  "note": "bob's reviews about halved that week"
+                },
+                {
+                  "signal_id": null,
+                  "metric": "reviews_submitted",
+                  "bucket": "2026-10-05",
+                  "entity": null,
+                  "value": 31,
+                  "note": "Total reviews lower that week"
+                },
+                {
+                  "signal_id": "bc261ce93654",
+                  "metric": "time_to_first_review_p50_h.item",
+                  "bucket": "2026-10-05",
+                  "entity": "#161",
+                  "value": 84.18333333333334,
+                  "note": "dave's PR waited longest for a first review"
+                }
+              ],
+              "alternative_explanations": [
+                "The PRs that week were larger or harder to review, which slowed reviewers down",
+                "A holiday or offsite cut everyone's time, not just bob's (commits also dipped to 20)"
+              ],
+              "suggested_check": "Ask whether bob, or the team, was away or tied up with other work in the week of 2026-10-05, and look at who finally gave the first review on #161 and #170.",
+              "model_confidence": 0.55,
+              "adjustments": []
+            },
+            {
+              "statement": "The slower merges and lower merge count in the same week follow from the first-review delay, not from a separate bottleneck.",
+              "confidence": 0.5,
+              "evidence": [
+                {
+                  "signal_id": "a56e7c6048a8",
+                  "metric": "time_to_merge_p50_h",
+                  "bucket": "2026-10-05",
+                  "entity": null,
+                  "value": 41.38333333333333,
+                  "note": "Merge latency up"
+                },
+                {
+                  "signal_id": "57d621d7da8a",
+                  "metric": "prs_merged",
+                  "bucket": "2026-10-05",
+                  "entity": null,
+                  "value": 17,
+                  "note": "Merges fell while opened held"
+                },
+                {
+                  "signal_id": null,
+                  "metric": "prs_merged",
+                  "bucket": "2026-10-05",
+                  "entity": "bob",
+                  "value": 2,
+                  "note": "bob's own merges also dipped"
+                },
+                {
+                  "signal_id": null,
+                  "metric": "time_to_first_review_p50_h",
+                  "bucket": "2026-10-12",
+                  "entity": null,
+                  "value": 5.875,
+                  "note": "Latency recovered next week"
+                },
+                {
+                  "signal_id": null,
+                  "metric": "reviews_submitted",
+                  "bucket": "2026-10-12",
+                  "entity": null,
+                  "value": 45,
+                  "note": "Review catch-up the following week"
+                }
+              ],
+              "alternative_explanations": [
+                "CI or release-freeze problems held up merges on their own"
+              ],
+              "suggested_check": "Check whether the PRs merged in the week of 2026-10-12 include the backlog of PRs opened in the week of 2026-10-05.",
+              "model_confidence": 0.5,
+              "adjustments": []
+            }
+          ],
+          "dataCaveats": [
+            "Each latency metric is a weekly median over about 20 PRs, so one week's spike can come from a few slow PRs.",
+            "The issue close time signal for the week of 2026-10-19 rests on only 3 closed issues, so it is weak.",
+            "The data can't show why reviewers were busy that week (leave, meetings, other work)."
+          ],
+          "grounding": {
+            "status": "ok",
+            "rejected": [],
+            "unverifiedNumbers": [
+              10,
+              15
+            ],
+            "droppedHypotheses": 0
+          },
+          "checks": {
+            "schema_and_grounding": {
+              "pass": true,
+              "reason": "schema valid, no evidence rejected"
+            },
+            "names_planted_metric": {
+              "pass": true,
+              "reason": "top hypothesis cites metric time_to_first_review_p50_h, bucket 2026-10-05"
+            },
+            "confidence_ordering": {
+              "pass": true,
+              "reason": "top confidence 0.55 vs control mean 0"
+            },
+            "unverified_numbers": {
+              "pass": true,
+              "reason": "2: 10, 15"
+            }
+          }
+        },
+        {
+          "run": 3,
+          "ok": true,
+          "problem": null,
+          "latencyMs": 22683,
+          "generationMs": 22623,
+          "toolCalls": 5,
+          "turns": 3,
+          "model": "claude-opus-5-5",
+          "usage": {
+            "inputTokens": 8,
+            "outputTokens": 2102,
+            "cacheReadTokens": 26426,
+            "cacheWriteTokens": 2930,
+            "costUsd": 0.062007
+          },
+          "topConfidence": 0.6,
+          "headline": "Review wait spiked for one week (2026-10-05), when there was less review capacity, and recovered the next week",
+          "narrative": "The week of 2026-10-05 is the only clear disruption in this window. Median time to first review jumped to 21.53 hours from a typical 6.29. Median time to merge rose to 41.38 hours against a typical 29.89, and merges fell to 17 even though new pull requests held steady at 25. That week only 31 reviews were submitted, against 38 to 39 in most weeks. Reviewer bob gave 7 reviews, about half his usual number, and his own merges and commits also dropped. dave gives no reviews, so his pull requests depend entirely on the other three, and his #161 waited 84.18333333333334 hours for a first review. Everything was back to normal the following week, when 45 reviews were submitted. A rise in median issue close time in the week of 2026-10-19 rests on only 3 closed issues, so it is too thin to read much into.",
+          "hypotheses": [
+            {
+              "statement": "The review-latency and merge slowdown in the week of 2026-10-05 most likely came from a temporary drop in review capacity. bob, one of only three active reviewers, gave about half his usual reviews, and with fewer reviews overall the pull requests from dave, who does no reviewing, queued for first review.",
+              "confidence": 0.6,
+              "evidence": [
+                {
+                  "signal_id": "bc261ce93654",
+                  "metric": "time_to_first_review_p50_h",
+                  "bucket": "2026-10-05",
+                  "entity": null,
+                  "value": 21.53333333333333,
+                  "note": "First-review median spiked"
+                },
+                {
+                  "signal_id": "bc261ce93654",
+                  "metric": "time_to_first_review_p50_h.baseline_median",
+                  "bucket": "2026-10-05",
+                  "entity": null,
+                  "value": 6.291666666666667,
+                  "note": "Typical first-review median"
+                },
+                {
+                  "signal_id": null,
+                  "metric": "reviews_submitted",
+                  "bucket": "2026-10-05",
+                  "entity": null,
+                  "value": 31,
+                  "note": "Fewer reviews than usual that week"
+                },
+                {
+                  "signal_id": null,
+                  "metric": "reviews_given",
+                  "bucket": "2026-10-05",
+                  "entity": "bob",
+                  "value": 7,
+                  "note": "bob's reviews roughly halved"
+                },
+                {
+                  "signal_id": "bc261ce93654",
+                  "metric": "time_to_first_review_p50_h.item",
+                  "bucket": "2026-10-05",
+                  "entity": "#161",
+                  "value": 84.18333333333334,
+                  "note": "dave's PR waited longest for first review"
+                }
+              ],
+              "alternative_explanations": [
+                "Larger-than-usual pull requests that week (the throughput signal lists several of about 450 to 550 lines) may have slowed reviews on their own.",
+                "A team-wide event such as a holiday, release freeze or incident may have cut review time for everyone, not just bob."
+              ],
+              "suggested_check": "Check whether bob, or the team, had reduced availability (leave, on-call, a release) in the week of 2026-10-05, and whether that week's pull requests were larger than usual.",
+              "model_confidence": 0.6,
+              "adjustments": []
+            },
+            {
+              "statement": "The drop in merges and the longer merge time in the same week are knock-on effects of the first-review delay rather than a separate problem: pull requests waited longer for a first review, so fewer were merged that week and the backlog cleared the week after.",
+              "confidence": 0.55,
+              "evidence": [
+                {
+                  "signal_id": "a56e7c6048a8",
+                  "metric": "time_to_merge_p50_h",
+                  "bucket": "2026-10-05",
+                  "entity": null,
+                  "value": 41.38333333333333,
+                  "note": "Merge time median rose"
+                },
+                {
+                  "signal_id": "57d621d7da8a",
+                  "metric": "prs_merged",
+                  "bucket": "2026-10-05",
+                  "entity": null,
+                  "value": 17,
+                  "note": "Merges fell while opens held"
+                },
+                {
+                  "signal_id": null,
+                  "metric": "prs_merged",
+                  "bucket": "2026-10-12",
+                  "entity": null,
+                  "value": 24,
+                  "note": "Merges rebounded the next week"
+                },
+                {
+                  "signal_id": null,
+                  "metric": "reviews_submitted",
+                  "bucket": "2026-10-12",
+                  "entity": null,
+                  "value": 45,
+                  "note": "Review volume rebounded"
+                }
+              ],
+              "alternative_explanations": [
+                "Some pull requests may have needed more rework cycles after review, independent of the first-review wait."
+              ],
+              "suggested_check": "Check the review timelines of #161, #169 and #175 to see whether their merge delay came mostly before or after the first review.",
+              "model_confidence": 0.55,
+              "adjustments": []
+            }
+          ],
+          "dataCaveats": [
+            "The issue close-time signal for the week of 2026-10-19 is a median of only 3 closed issues, so it is very sensitive to individual issues.",
+            "There are only 8 weekly buckets, so baselines rest on 7 points. The first-review outlier score relies on a floor scale, which inflates its z-score.",
+            "Only four contributors are active and three of them do all the reviewing, so one person's absence moves the team metrics a lot."
+          ],
+          "grounding": {
+            "status": "ok",
+            "rejected": [],
+            "unverifiedNumbers": [
+              29.89,
+              25,
+              38,
+              39,
+              3
+            ],
+            "droppedHypotheses": 0
+          },
+          "checks": {
+            "schema_and_grounding": {
+              "pass": true,
+              "reason": "schema valid, no evidence rejected"
+            },
+            "names_planted_metric": {
+              "pass": true,
+              "reason": "top hypothesis cites metric time_to_first_review_p50_h, bucket 2026-10-05"
+            },
+            "confidence_ordering": {
+              "pass": true,
+              "reason": "top confidence 0.6 vs control mean 0"
+            },
+            "unverified_numbers": {
+              "pass": false,
+              "reason": "5: 29.89, 25, 38, 39, 3"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "reviewer_dropout",
+      "expect": {
+        "metric": [
+          "reviews_submitted",
+          "review_concentration_top1",
+          "time_to_first_review_p50_h",
+          "reviews_given"
+        ],
+        "entity": "bob"
+      },
+      "seed": 2,
+      "perturbations": [
+        {
+          "type": "reviewer_dropout",
+          "week": 6,
+          "login": "bob"
+        }
+      ],
+      "snapshot": {
+        "pullRequests": 205,
+        "reviews": 277,
+        "issues": 42,
+        "commits": 191
+      },
+      "window": {
+        "from": "2026-08-31T00:00:00.000Z",
+        "to": "2026-10-26T00:00:00.000Z"
+      },
+      "signals": [
+        {
+          "id": "ca7743ff2a23",
+          "detector": "level_shift",
+          "metric": "time_to_first_review_p50_h",
+          "bucket": "2026-10-12",
+          "entity": null,
+          "observed": 10.620833333333334,
+          "baselineMedian": 6.383333333333333,
+          "score": 4.237500000000001,
+          "severity": "moderate"
+        },
+        {
+          "id": "443f30a8754f",
+          "detector": "robust_outlier",
+          "metric": "review_concentration_hhi",
+          "bucket": "2026-10-05",
+          "entity": null,
+          "observed": 0.5355555555555556,
+          "baselineMedian": 0.33884297520661155,
+          "score": 3.93425160697888,
+          "severity": "moderate"
+        },
+        {
+          "id": "b1d67310d623",
+          "detector": "robust_outlier",
+          "metric": "time_to_first_review_p50_h",
+          "bucket": "2026-10-19",
+          "entity": null,
+          "observed": 11.141666666666666,
+          "baselineMedian": 6.625,
+          "score": 3.768804037487777,
+          "severity": "moderate"
+        },
+        {
+          "id": "83243a0cbcfa",
+          "detector": "robust_outlier",
+          "metric": "review_concentration_hhi",
+          "bucket": "2026-10-19",
+          "entity": null,
+          "observed": 0.5078125,
+          "baselineMedian": 0.33884297520661155,
+          "score": 3.379390495867769,
+          "severity": "moderate"
+        },
+        {
+          "id": "e60ad2ac0859",
+          "detector": "level_shift",
+          "metric": "review_concentration_hhi",
+          "bucket": "2026-10-12",
+          "entity": null,
+          "observed": 0.5062475611342352,
+          "baselineMedian": 0.3387180030536674,
+          "score": 3.350591161611356,
+          "severity": "moderate"
+        },
+        {
+          "id": "c8cc804e6f98",
+          "detector": "review_concentration",
+          "metric": "review_concentration_top1",
+          "bucket": "2026-10-05",
+          "entity": "carol",
+          "observed": 0.6333333333333333,
+          "baselineMedian": null,
+          "score": 0.6333333333333333,
+          "severity": "moderate"
+        },
+        {
+          "id": "a329d95b3b36",
+          "detector": "review_concentration",
+          "metric": "review_concentration_top1",
+          "bucket": "2026-10-19",
+          "entity": "carol",
+          "observed": 0.5625,
+          "baselineMedian": null,
+          "score": 0.5625,
+          "severity": "moderate"
+        },
+        {
+          "id": "c7593293fee3",
+          "detector": "review_concentration",
+          "metric": "review_concentration_top1",
+          "bucket": "2026-10-12",
+          "entity": "carol",
+          "observed": 0.5483870967741935,
+          "baselineMedian": null,
+          "score": 0.5483870967741935,
+          "severity": "moderate"
+        }
+      ],
+      "runs": [
+        {
+          "run": 1,
+          "ok": true,
+          "problem": null,
+          "latencyMs": 18315,
+          "generationMs": 18287,
+          "toolCalls": 3,
+          "turns": 2,
+          "model": "claude-opus-5-5",
+          "usage": {
+            "inputTokens": 6,
+            "outputTokens": 1710,
+            "cacheReadTokens": 15002,
+            "cacheWriteTokens": 7440,
+            "costUsd": 0.074424
+          },
+          "topConfidence": 0.6,
+          "headline": "bob stopped reviewing from the week of 2026-10-05, so two reviewers now carry all reviews and first reviews take longer",
+          "narrative": "Starting the week of 2026-10-05, bob went from about a dozen reviews a week to none. He kept opening pull requests and committing at his usual rate over the same weeks. Since then carol and alice have done all the reviewing, with carol picking up most of the extra work: her share of reviews reached 0.6333333333333333 in that week. Over the last two weeks the median time to first review rose to 10.620833333333334 hours, against a typical 6.383333333333333. So far merge throughput and time to merge have held steady, so the main costs are slower first reviews and a heavier load on carol.",
+          "hypotheses": [
+            {
+              "statement": "From 2026-10-05 bob stopped submitting reviews while staying active as an author, which took a third of the reviewer pool out of the rotation. carol and alice took on his share, carol most of all, which raised review concentration and slowed first reviews.",
+              "confidence": 0.6,
+              "evidence": [
+                {
+                  "signal_id": null,
+                  "metric": "reviews_given",
+                  "bucket": "2026-09-28",
+                  "entity": "bob",
+                  "value": 10,
+                  "note": "bob reviewing normally the week before"
+                },
+                {
+                  "signal_id": null,
+                  "metric": "reviews_given",
+                  "bucket": "2026-10-05",
+                  "entity": "bob",
+                  "value": 0,
+                  "note": "bob's reviews drop to zero"
+                },
+                {
+                  "signal_id": null,
+                  "metric": "reviews_given",
+                  "bucket": "2026-10-05",
+                  "entity": "carol",
+                  "value": 19,
+                  "note": "carol picks up the extra review load"
+                },
+                {
+                  "signal_id": "c8cc804e6f98",
+                  "metric": "review_concentration_top1",
+                  "bucket": "2026-10-05",
+                  "entity": null,
+                  "value": 0.6333333333333333,
+                  "note": "carol's share of all reviews"
+                },
+                {
+                  "signal_id": "ca7743ff2a23",
+                  "metric": "time_to_first_review_p50_h.observed",
+                  "bucket": "2026-10-12",
+                  "entity": null,
+                  "value": 10.620833333333334,
+                  "note": "median first-review time over the recent weeks"
+                }
+              ],
+              "alternative_explanations": [
+                "bob may have been formally moved off review duty, for example by a CODEOWNERS or rotation change, rather than an informal shift",
+                "Review requests may have been routed away from bob by a tooling change",
+                "Part of the slower first reviews may come from the timing or size of pull requests rather than reviewer capacity"
+              ],
+              "suggested_check": "Ask whether bob was taken off review rotation or CODEOWNERS around 2026-10-05, and if so whether that is planned to last.",
+              "model_confidence": 0.8,
+              "adjustments": [
+                "moderate_signal_only"
+              ]
+            },
+            {
+              "statement": "With only two reviewers active, the review queue is waiting on reviewer capacity, which shows up as consistently longer first-review times for authors across the team, not a few slow outliers.",
+              "confidence": 0.6,
+              "evidence": [
+                {
+                  "signal_id": "ca7743ff2a23",
+                  "metric": "time_to_first_review_p50_h.baseline_median",
+                  "bucket": "2026-10-12",
+                  "entity": null,
+                  "value": 6.383333333333333,
+                  "note": "typical first-review time before the change"
+                },
+                {
+                  "signal_id": "b1d67310d623",
+                  "metric": "time_to_first_review_p50_h",
+                  "bucket": "2026-10-19",
+                  "entity": null,
+                  "value": 11.141666666666666,
+                  "note": "latest week's first-review median is the highest in the window"
+                },
+                {
+                  "signal_id": "ca7743ff2a23",
+                  "metric": "time_to_first_review_p50_h.item",
+                  "bucket": "2026-10-12",
+                  "entity": "#202",
+                  "value": 26.066666666666666,
+                  "note": "even carol's own PR waited long for a review"
+                },
+                {
+                  "signal_id": null,
+                  "metric": "reviews_submitted",
+                  "bucket": "2026-10-05",
+                  "entity": null,
+                  "value": 30,
+                  "note": "total reviews dipped once bob stopped"
+                }
+              ],
+              "alternative_explanations": [
+                "Pull requests opened late in the week may push first-review times up regardless of capacity"
+              ],
+              "suggested_check": "Compare first-review times by reviewer before and after 2026-10-05 to see whether carol's and alice's response times got longer.",
+              "model_confidence": 0.6,
+              "adjustments": []
+            }
+          ],
+          "dataCaveats": [
+            "Every bucket is complete and sync covers the whole window, but there are only three weeks after the change, so the trend is short.",
+            "The review metrics count only non-author reviews, and bots are excluded."
+          ],
+          "grounding": {
+            "status": "ok",
+            "rejected": [],
+            "unverifiedNumbers": [],
+            "droppedHypotheses": 0
+          },
+          "checks": {
+            "schema_and_grounding": {
+              "pass": true,
+              "reason": "schema valid, no evidence rejected"
+            },
+            "names_planted_metric": {
+              "pass": true,
+              "reason": "top hypothesis cites metric reviews_submitted|review_concentration_top1|time_to_first_review_p50_h|reviews_given, entity bob"
+            },
+            "confidence_ordering": {
+              "pass": true,
+              "reason": "top confidence 0.6 vs control mean 0"
+            },
+            "unverified_numbers": {
+              "pass": true,
+              "reason": "none"
+            }
+          }
+        },
+        {
+          "run": 2,
+          "ok": true,
+          "problem": null,
+          "latencyMs": 20367,
+          "generationMs": 20309,
+          "toolCalls": 4,
+          "turns": 3,
+          "model": "claude-opus-5-5",
+          "usage": {
+            "inputTokens": 8,
+            "outputTokens": 1591,
+            "cacheReadTokens": 32893,
+            "cacheWriteTokens": 1821,
+            "costUsd": 0.047536
+          },
+          "topConfidence": 0.6,
+          "headline": "bob stopped reviewing in early October, so carol took on most reviews and first-review wait rose from about 6 to about 11 hours",
+          "narrative": "Delivery held steady over the eight weeks: 25 pull requests were opened every week and merges stayed in the high teens to low twenties. What changed is who reviews. Starting the week of 2026-10-05, bob gave 0 reviews in each of the last three weeks, down from 10 to 12 a week before that, though he kept opening and merging his own pull requests. Over the same weeks carol's share of reviews rose to 0.6333333333333333 and then held above half, with her weekly review count going from 10 to 19. The median time to a first review moved from a typical 6.383333333333333 hours to 10.620833333333334 hours, reaching 11.141666666666666 in the week of 2026-10-19. The wait grew for pull requests from every author, which points to fewer people reviewing rather than to any one hard change.",
+          "hypotheses": [
+            {
+              "statement": "From 2026-10-05, bob stopped doing reviews while still writing code. That left alice and carol as the only reviewers. Carol picked up most of his share, which concentrated review load on her and slowed first reviews.",
+              "confidence": 0.6,
+              "evidence": [
+                {
+                  "signal_id": null,
+                  "metric": "reviews_given",
+                  "bucket": "2026-09-28",
+                  "entity": "bob",
+                  "value": 10,
+                  "note": "bob's reviews in the last week before the change"
+                },
+                {
+                  "signal_id": null,
+                  "metric": "reviews_given",
+                  "bucket": "2026-10-05",
+                  "entity": "bob",
+                  "value": 0,
+                  "note": "bob gave no reviews from this week on"
+                },
+                {
+                  "signal_id": null,
+                  "metric": "reviews_given",
+                  "bucket": "2026-10-05",
+                  "entity": "carol",
+                  "value": 19,
+                  "note": "carol's reviews rose to make up the gap"
+                },
+                {
+                  "signal_id": "c8cc804e6f98",
+                  "metric": "review_concentration_top1",
+                  "bucket": "2026-10-05",
+                  "entity": null,
+                  "value": 0.6333333333333333,
+                  "note": "carol's share of all reviews"
+                },
+                {
+                  "signal_id": "ca7743ff2a23",
+                  "metric": "time_to_first_review_p50_h.observed",
+                  "bucket": "2026-10-12",
+                  "entity": null,
+                  "value": 10.620833333333334,
+                  "note": "median first-review wait over the last 2 weeks, up from about 6.4 hours"
+                }
+              ],
+              "alternative_explanations": [
+                "bob may have been moved to other work or been on leave from reviewing, with no change to the team's process",
+                "A change to review assignment, such as CODEOWNERS or auto-assign rules, may have dropped bob from the reviewer rotation"
+              ],
+              "suggested_check": "Ask whether bob's review role or the reviewer auto-assignment rules changed around 2026-10-05. If reviewing is still meant to be shared, add a third reviewer back into the rotation.",
+              "model_confidence": 0.75,
+              "adjustments": [
+                "moderate_signal_only"
+              ]
+            }
+          ],
+          "dataCaveats": [
+            "Sync covers the whole window and no bucket is partial.",
+            "Only three people reviewed at all, so losing one reviewer has a large effect on the concentration measures.",
+            "Time to first review is a median per week of a small number of pull requests, so it can be noisy from week to week.",
+            "The level-shift signals rest on just two recent weeks."
+          ],
+          "grounding": {
+            "status": "ok",
+            "rejected": [],
+            "unverifiedNumbers": [
+              6,
+              25,
+              12,
+              6.383333333333333,
+              11.141666666666666
+            ],
+            "droppedHypotheses": 0
+          },
+          "checks": {
+            "schema_and_grounding": {
+              "pass": true,
+              "reason": "schema valid, no evidence rejected"
+            },
+            "names_planted_metric": {
+              "pass": true,
+              "reason": "top hypothesis cites metric reviews_submitted|review_concentration_top1|time_to_first_review_p50_h|reviews_given, entity bob"
+            },
+            "confidence_ordering": {
+              "pass": true,
+              "reason": "top confidence 0.6 vs control mean 0"
+            },
+            "unverified_numbers": {
+              "pass": false,
+              "reason": "5: 6, 25, 12, 6.383333333333333, 11.141666666666666"
+            }
+          }
+        },
+        {
+          "run": 3,
+          "ok": true,
+          "problem": null,
+          "latencyMs": 15691,
+          "generationMs": 15599,
+          "toolCalls": 3,
+          "turns": 2,
+          "model": "claude-opus-5-5",
+          "usage": {
+            "inputTokens": 6,
+            "outputTokens": 1505,
+            "cacheReadTokens": 20976,
+            "cacheWriteTokens": 1439,
+            "costUsd": 0.041514
+          },
+          "topConfidence": 0.6,
+          "headline": "From the week of 2026-10-05, bob stopped reviewing, leaving two reviewers and slowing first reviews",
+          "narrative": "bob reviewed steadily until the week of 2026-09-28, giving 10 reviews that week, then gave 0 reviews in each of the last three weeks. He kept opening and merging pull requests over the same period. Over those weeks carol took on most of the extra reviewing: her share of reviews rose to 0.6333333333333333 in the week of 2026-10-05, and review concentration (HHI) went from a typical 0.33884297520661155 to 0.5355555555555556. alice's review count stayed about the same. With only two reviewers, the median time to first review rose from a typical 6.383333333333333 hours to 10.620833333333334 hours over the last two weeks. Merge counts, merge time and the number of pull requests opened stayed flat, so so far the change shows up as slower first reviews and more load on carol, not lower output.",
+          "hypotheses": [
+            {
+              "statement": "From the week of 2026-10-05, bob stopped reviewing but kept writing code. That shrank the active reviewer pool from three people to two (carol and alice), concentrating review work on carol and lengthening the wait for a first review.",
+              "confidence": 0.6,
+              "evidence": [
+                {
+                  "signal_id": null,
+                  "metric": "reviews_given",
+                  "bucket": "2026-09-28",
+                  "entity": "bob",
+                  "value": 10,
+                  "note": "bob still reviewing before the shift"
+                },
+                {
+                  "signal_id": null,
+                  "metric": "reviews_given",
+                  "bucket": "2026-10-05",
+                  "entity": "bob",
+                  "value": 0,
+                  "note": "bob gave no reviews from this week on"
+                },
+                {
+                  "signal_id": "c8cc804e6f98",
+                  "metric": "review_concentration_top1",
+                  "bucket": "2026-10-05",
+                  "entity": null,
+                  "value": 0.6333333333333333,
+                  "note": "carol's share of all reviews jumped"
+                },
+                {
+                  "signal_id": "443f30a8754f",
+                  "metric": "review_concentration_hhi",
+                  "bucket": "2026-10-05",
+                  "entity": null,
+                  "value": 0.5355555555555556,
+                  "note": "reviews concentrated in fewer people"
+                },
+                {
+                  "signal_id": "443f30a8754f",
+                  "metric": "review_concentration_hhi.baseline_median",
+                  "bucket": "2026-10-05",
+                  "entity": null,
+                  "value": 0.33884297520661155,
+                  "note": "typical concentration before"
+                },
+                {
+                  "signal_id": "ca7743ff2a23",
+                  "metric": "time_to_first_review_p50_h.observed",
+                  "bucket": "2026-10-12",
+                  "entity": null,
+                  "value": 10.620833333333334,
+                  "note": "recent median hours to first review"
+                },
+                {
+                  "signal_id": "ca7743ff2a23",
+                  "metric": "time_to_first_review_p50_h.baseline_median",
+                  "bucket": "2026-10-12",
+                  "entity": null,
+                  "value": 6.383333333333333,
+                  "note": "typical hours to first review before"
+                }
+              ],
+              "alternative_explanations": [
+                "bob may have moved to other duties or been on leave from reviews only, for example after a deliberate rotation change",
+                "Review assignment rules (CODEOWNERS or auto-assign) may have changed and stopped routing reviews to bob",
+                "Larger or more complex pull requests could be adding to the slower first reviews regardless of who reviews"
+              ],
+              "suggested_check": "Ask whether bob was taken off the review rotation or CODEOWNERS around 2026-10-05, and check whether review requests are still being sent to him.",
+              "model_confidence": 0.75,
+              "adjustments": [
+                "moderate_signal_only"
+              ]
+            }
+          ],
+          "dataCaveats": [
+            "Weekly buckets give only 8 data points; baselines rest on 6 to 7 earlier weeks.",
+            "Medians of time to first review are counted by the week the first review landed, so a backlog clearing can move values between weeks.",
+            "Bots are excluded; any bot reviews are not counted in the concentration figures."
+          ],
+          "grounding": {
+            "status": "ok",
+            "rejected": [],
+            "unverifiedNumbers": [],
+            "droppedHypotheses": 0
+          },
+          "checks": {
+            "schema_and_grounding": {
+              "pass": true,
+              "reason": "schema valid, no evidence rejected"
+            },
+            "names_planted_metric": {
+              "pass": true,
+              "reason": "top hypothesis cites metric reviews_submitted|review_concentration_top1|time_to_first_review_p50_h|reviews_given, entity bob"
+            },
+            "confidence_ordering": {
+              "pass": true,
+              "reason": "top confidence 0.6 vs control mean 0"
+            },
+            "unverified_numbers": {
+              "pass": true,
+              "reason": "none"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "throughput_shift",
+      "expect": {
+        "metric": "prs_merged"
+      },
+      "seed": 3,
+      "perturbations": [
+        {
+          "type": "throughput_shift",
+          "fromWeek": 5,
+          "factor": 0.4
+        }
+      ],
+      "snapshot": {
+        "pullRequests": 206,
+        "reviews": 293,
+        "issues": 42,
+        "commits": 147
+      },
+      "window": {
+        "from": "2026-08-31T00:00:00.000Z",
+        "to": "2026-10-26T00:00:00.000Z"
+      },
+      "signals": [
+        {
+          "id": "27b57d9e2626",
+          "detector": "level_shift",
+          "metric": "prs_merged",
+          "bucket": "2026-10-12",
+          "entity": null,
+          "observed": 9.5,
+          "baselineMedian": 20.5,
+          "score": -5.365853658536585,
+          "severity": "high"
+        },
+        {
+          "id": "57d621d7da8a",
+          "detector": "throughput_divergence",
+          "metric": "prs_merged",
+          "bucket": "2026-10-05",
+          "entity": null,
+          "observed": 8,
+          "baselineMedian": 20,
+          "score": -4.046944556859572,
+          "severity": "high"
+        },
+        {
+          "id": "3435ad267ac0",
+          "detector": "throughput_divergence",
+          "metric": "prs_merged",
+          "bucket": "2026-10-19",
+          "entity": null,
+          "observed": 9,
+          "baselineMedian": 20,
+          "score": -3.7096991771212737,
+          "severity": "high"
+        },
+        {
+          "id": "c63b1dc69337",
+          "detector": "throughput_divergence",
+          "metric": "prs_merged",
+          "bucket": "2026-09-28",
+          "entity": null,
+          "observed": 12,
+          "baselineMedian": 20,
+          "score": -2.697963037906381,
+          "severity": "high"
+        },
+        {
+          "id": "dbffe02fccba",
+          "detector": "level_shift",
+          "metric": "commits",
+          "bucket": "2026-10-12",
+          "entity": null,
+          "observed": 12.5,
+          "baselineMedian": 23.5,
+          "score": -4.680851063829787,
+          "severity": "moderate"
+        },
+        {
+          "id": "1ef91f7fcad8",
+          "detector": "robust_outlier",
+          "metric": "commits",
+          "bucket": "2026-10-05",
+          "entity": null,
+          "observed": 11,
+          "baselineMedian": 23,
+          "score": -4.046944556859572,
+          "severity": "moderate"
+        },
+        {
+          "id": "2d5435854b14",
+          "detector": "robust_outlier",
+          "metric": "commits",
+          "bucket": "2026-10-19",
+          "entity": null,
+          "observed": 12,
+          "baselineMedian": 23,
+          "score": -3.7096991771212737,
+          "severity": "moderate"
+        },
+        {
+          "id": "e0ff3cdd0749",
+          "detector": "level_shift",
+          "metric": "prs_closed_unmerged",
+          "bucket": "2026-10-12",
+          "entity": null,
+          "observed": 5,
+          "baselineMedian": 1,
+          "score": 3.597333333333333,
+          "severity": "moderate"
+        }
+      ],
+      "runs": [
+        {
+          "run": 1,
+          "ok": true,
+          "problem": null,
+          "latencyMs": 16839,
+          "generationMs": 16802,
+          "toolCalls": 4,
+          "turns": 2,
+          "model": "claude-opus-5-5",
+          "usage": {
+            "inputTokens": 6,
+            "outputTokens": 1630,
+            "cacheReadTokens": 15046,
+            "cacheWriteTokens": 7897,
+            "costUsd": 0.075118
+          },
+          "topConfidence": 0.5,
+          "headline": "Merges roughly halved from late September while PR intake, reviews and approvals held steady, which points to a block after approval rather than a review capacity problem",
+          "narrative": "From the week of 2026-09-28, merged PRs fell from a median of 21 per week to 10, while new PRs held at 25 a week. Review activity did not fall. The repo still got 25 approvals in the week of 2026-10-05, and median time to first review stayed in its usual range. The drop affected every author, including dave, who merged only 1 PR in the week of 2026-10-05. That means it is not tied to one person. PRs closed without merging rose from a typical 1 to 5 a week, and commits to main fell along with merges. This suggests approved work is getting stuck or abandoned at the merge step, for example because of CI, a merge freeze or conflicts.",
+          "hypotheses": [
+            {
+              "statement": "Something after approval, such as CI failures, a merge freeze, branch protection changes or merge conflicts, has been blocking merges since 2026-09-28. Approved PRs are piling up or being closed instead of landing.",
+              "confidence": 0.5,
+              "evidence": [
+                {
+                  "signal_id": "27b57d9e2626",
+                  "metric": "prs_merged.observed",
+                  "bucket": "2026-10-12",
+                  "entity": null,
+                  "value": 9.5,
+                  "note": "Recent median of weekly merges"
+                },
+                {
+                  "signal_id": "27b57d9e2626",
+                  "metric": "prs_merged.baseline_median",
+                  "bucket": "2026-10-12",
+                  "entity": null,
+                  "value": 20.5,
+                  "note": "Typical weekly merges before the drop"
+                },
+                {
+                  "signal_id": "57d621d7da8a",
+                  "metric": "approvals",
+                  "bucket": "2026-10-05",
+                  "entity": null,
+                  "value": 25,
+                  "note": "Approvals unchanged while merges fell to 8"
+                },
+                {
+                  "signal_id": "e0ff3cdd0749",
+                  "metric": "prs_closed_unmerged.observed",
+                  "bucket": "2026-10-12",
+                  "entity": null,
+                  "value": 5,
+                  "note": "PRs closed without merging rose from a typical 1"
+                },
+                {
+                  "signal_id": null,
+                  "metric": "prs_merged",
+                  "bucket": "2026-10-05",
+                  "entity": "dave",
+                  "value": 1,
+                  "note": "Drop affects all authors, not one person"
+                }
+              ],
+              "alternative_explanations": [
+                "A deliberate release stabilisation or code freeze that holds merges",
+                "PRs got larger or riskier and need more rounds of revision after approval",
+                "A cleanup that closed stale PRs, separate from the merge slowdown"
+              ],
+              "suggested_check": "Look at the open PRs that are approved but not merged: check their CI status and mergeability, and check whether branch protection or the CI setup changed around 2026-09-28.",
+              "model_confidence": 0.5,
+              "adjustments": []
+            }
+          ],
+          "dataCaveats": [
+            "All buckets are complete and sync coverage is full.",
+            "PR titles are generic (for example 'Change 199'), so the content of the stuck or closed PRs can't be inferred.",
+            "Time to merge only covers PRs that did merge, so it can't show how long the unmerged ones have been waiting."
+          ],
+          "grounding": {
+            "status": "ok",
+            "rejected": [],
+            "unverifiedNumbers": [],
+            "droppedHypotheses": 0
+          },
+          "checks": {
+            "schema_and_grounding": {
+              "pass": true,
+              "reason": "schema valid, no evidence rejected"
+            },
+            "names_planted_metric": {
+              "pass": true,
+              "reason": "top hypothesis cites metric prs_merged"
+            },
+            "confidence_ordering": {
+              "pass": true,
+              "reason": "top confidence 0.5 vs control mean 0"
+            },
+            "unverified_numbers": {
+              "pass": true,
+              "reason": "none"
+            }
+          }
+        },
+        {
+          "run": 2,
+          "ok": true,
+          "problem": null,
+          "latencyMs": 22864,
+          "generationMs": 22803,
+          "toolCalls": 5,
+          "turns": 3,
+          "model": "claude-opus-5-5",
+          "usage": {
+            "inputTokens": 8,
+            "outputTokens": 2349,
+            "cacheReadTokens": 32983,
+            "cacheWriteTokens": 2184,
+            "costUsd": 0.064529
+          },
+          "topConfidence": 0.55,
+          "headline": "Merges roughly halved from late September while PR openings, reviews and approvals held steady, so work is stalling after approval",
+          "narrative": "From the week of 2026-09-28, merged pull requests fell from a median of 21 a week to 10, even though 25 PRs were still opened every week. Review activity did not drop: approvals had a median of 25 a week both before and after the change, and time to first review stayed within its usual range. Because approvals held steady while merges fell, the hold-up appears to sit after approval, in the merge step itself, for example CI, a merge queue, branch protection or a release freeze. Closed-without-merge PRs also rose from a typical 1 to 5 a week, and commits on main fell from a typical 23.5 to 12.5, which matches less work landing. The drop affects every author, including alice and dave, so it looks like a process or tooling problem rather than one person's workload.",
+          "hypotheses": [
+            {
+              "statement": "Starting the week of 2026-09-28, something after approval has been blocking or slowing merges to main, such as failing or slow CI, a merge queue or branch-protection change, or a merge freeze. Some stalled PRs are being closed instead of merged.",
+              "confidence": 0.55,
+              "evidence": [
+                {
+                  "signal_id": "27b57d9e2626",
+                  "metric": "prs_merged.observed",
+                  "bucket": "2026-10-12",
+                  "entity": null,
+                  "value": 9.5,
+                  "note": "recent median merges per week"
+                },
+                {
+                  "signal_id": "27b57d9e2626",
+                  "metric": "prs_merged.baseline_median",
+                  "bucket": "2026-10-12",
+                  "entity": null,
+                  "value": 20.5,
+                  "note": "typical weekly merges before the shift"
+                },
+                {
+                  "signal_id": null,
+                  "metric": "approvals.median",
+                  "bucket": "2026-09-28/2026-10-19",
+                  "entity": null,
+                  "value": 25,
+                  "note": "approvals unchanged in the low-merge period"
+                },
+                {
+                  "signal_id": "e0ff3cdd0749",
+                  "metric": "prs_closed_unmerged.observed",
+                  "bucket": "2026-10-12",
+                  "entity": null,
+                  "value": 5,
+                  "note": "more PRs closed without merge"
+                },
+                {
+                  "signal_id": "dbffe02fccba",
+                  "metric": "commits.observed",
+                  "bucket": "2026-10-12",
+                  "entity": null,
+                  "value": 12.5,
+                  "note": "fewer commits landing on main"
+                }
+              ],
+              "alternative_explanations": [
+                "Approvals may be going to re-reviews of the same PRs rather than to new PRs, so fewer PRs actually reach merge-ready.",
+                "The team may be deliberately holding merges, for example in a release freeze or stabilisation period, which would be a planned choice rather than a fault.",
+                "The PRs being opened may be larger or harder to land, though the example sizes do not look unusual."
+              ],
+              "suggested_check": "Look at CI run history and branch-protection or merge-queue settings around 2026-09-28. Also check approved-but-unmerged PRs such as #200 and #181 for failing checks or freeze labels.",
+              "model_confidence": 0.55,
+              "adjustments": []
+            },
+            {
+              "statement": "The merge slowdown is spread across all authors and is not one contributor's workload. dave and alice, for example, both opened PRs at their usual rate while their merges dropped.",
+              "confidence": 0.5,
+              "evidence": [
+                {
+                  "signal_id": null,
+                  "metric": "prs_opened",
+                  "bucket": "2026-10-19",
+                  "entity": "dave",
+                  "value": 10,
+                  "note": "dave opened many PRs late in the window"
+                },
+                {
+                  "signal_id": null,
+                  "metric": "prs_merged",
+                  "bucket": "2026-10-19",
+                  "entity": "dave",
+                  "value": 3,
+                  "note": "few of dave's PRs merged"
+                },
+                {
+                  "signal_id": null,
+                  "metric": "prs_merged",
+                  "bucket": "2026-10-12",
+                  "entity": "alice",
+                  "value": 1,
+                  "note": "alice's merges also fell"
+                },
+                {
+                  "signal_id": null,
+                  "metric": "prs_merged.delta_median",
+                  "bucket": "2026-08-31/2026-09-21|2026-09-28/2026-10-19",
+                  "entity": null,
+                  "value": -11,
+                  "note": "team-wide fall in median weekly merges"
+                }
+              ],
+              "alternative_explanations": [
+                "Coincidental individual slowdowns, which is unlikely given how evenly the drop is spread across authors."
+              ],
+              "suggested_check": "Compare open PR counts per author over time to confirm that a backlog is building evenly across the team.",
+              "model_confidence": 0.6,
+              "adjustments": [
+                "no_signal_cited"
+              ]
+            }
+          ],
+          "dataCaveats": [
+            "The window has no partial buckets and sync coverage is complete.",
+            "Before/after comparisons use 3 complete weeks on each side, so the samples are small.",
+            "time_to_merge_p50_h only covers PRs that did merge, so it hides how long the backlog of unmerged PRs has been waiting.",
+            "The detectors return example items ranked by lines changed, which does not show why a given PR did not merge."
+          ],
+          "grounding": {
+            "status": "ok",
+            "rejected": [],
+            "unverifiedNumbers": [
+              23.5
+            ],
+            "droppedHypotheses": 0
+          },
+          "checks": {
+            "schema_and_grounding": {
+              "pass": true,
+              "reason": "schema valid, no evidence rejected"
+            },
+            "names_planted_metric": {
+              "pass": true,
+              "reason": "top hypothesis cites metric prs_merged"
+            },
+            "confidence_ordering": {
+              "pass": true,
+              "reason": "top confidence 0.55 vs control mean 0"
+            },
+            "unverified_numbers": {
+              "pass": true,
+              "reason": "1: 23.5"
+            }
+          }
+        },
+        {
+          "run": 3,
+          "ok": true,
+          "problem": null,
+          "latencyMs": 20621,
+          "generationMs": 20548,
+          "toolCalls": 4,
+          "turns": 3,
+          "model": "claude-opus-5-5",
+          "usage": {
+            "inputTokens": 8,
+            "outputTokens": 2094,
+            "cacheReadTokens": 32959,
+            "cacheWriteTokens": 1904,
+            "costUsd": 0.058024
+          },
+          "topConfidence": 0.6,
+          "headline": "Merges roughly halved from late September while PR intake, reviews and approvals held steady",
+          "narrative": "Starting the week of 2026-09-28, merged PRs fell from a typical 20.5 a week to 9.5, even though 25 PRs kept being opened every week. Review activity did not drop: approvals stayed around 25 a week, and time to first review stayed in its usual range of about 5 to 8 hours. Pull requests closed without merging rose from a typical 1 a week to 5, and commits on main fell to about half (12.5 against a baseline of 23.5), which matches fewer merges landing. The drop affected every author, not one person. For example, dave merged only 1 PR in the week of 2026-10-05 despite opening 5, and alice merged 1 in the week of 2026-10-12 while opening 8. The most likely cause is a block that sits after approval, such as CI, branch protection or merge rules, rather than a shortage of reviewers. The data alone can't confirm this.",
+          "hypotheses": [
+            {
+              "statement": "Something between approval and merge, such as failing or flaky CI, a new required check or branch-protection rule, or a merge freeze, has been blocking approved PRs since the week of 2026-09-28. As a result, merges fell and more PRs were abandoned, while review capacity stayed the same.",
+              "confidence": 0.5,
+              "evidence": [
+                {
+                  "signal_id": "27b57d9e2626",
+                  "metric": "prs_merged.observed",
+                  "bucket": "2026-10-12",
+                  "entity": null,
+                  "value": 9.5,
+                  "note": "recent median weekly merges"
+                },
+                {
+                  "signal_id": "27b57d9e2626",
+                  "metric": "prs_merged.baseline_median",
+                  "bucket": "2026-10-12",
+                  "entity": null,
+                  "value": 20.5,
+                  "note": "typical weekly merges before"
+                },
+                {
+                  "signal_id": null,
+                  "metric": "approvals",
+                  "bucket": "2026-10-05",
+                  "entity": null,
+                  "value": 25,
+                  "note": "approvals unchanged in a low-merge week"
+                },
+                {
+                  "signal_id": "57d621d7da8a",
+                  "metric": "prs_merged",
+                  "bucket": "2026-10-05",
+                  "entity": null,
+                  "value": 8,
+                  "note": "merges dropped while 25 PRs were opened"
+                },
+                {
+                  "signal_id": "e0ff3cdd0749",
+                  "metric": "prs_closed_unmerged.observed",
+                  "bucket": "2026-10-12",
+                  "entity": null,
+                  "value": 5,
+                  "note": "more PRs closed without merge"
+                }
+              ],
+              "alternative_explanations": [
+                "A planned release or code freeze held back merges on purpose",
+                "Larger or riskier PRs needed several review rounds, so they stayed open longer",
+                "Authors split their work into PRs that were later superseded and closed"
+              ],
+              "suggested_check": "Look at the CI and check status, and any changes to branch protection or merge rules, for approved but unmerged PRs opened since 2026-09-28 (for example, PRs from the 2026-10-05 week). Also confirm whether a freeze was announced.",
+              "model_confidence": 0.5,
+              "adjustments": []
+            },
+            {
+              "statement": "The drop in commits on main is a downstream effect of fewer merges, not a separate slowdown in development work. PRs were still opened at the usual rate by all authors.",
+              "confidence": 0.6,
+              "evidence": [
+                {
+                  "signal_id": "dbffe02fccba",
+                  "metric": "commits.observed",
+                  "bucket": "2026-10-12",
+                  "entity": null,
+                  "value": 12.5,
+                  "note": "recent weekly commits on main"
+                },
+                {
+                  "signal_id": "dbffe02fccba",
+                  "metric": "commits.baseline_median",
+                  "bucket": "2026-10-12",
+                  "entity": null,
+                  "value": 23.5,
+                  "note": "typical weekly commits on main"
+                },
+                {
+                  "signal_id": null,
+                  "metric": "prs_opened",
+                  "bucket": "2026-10-19",
+                  "entity": "dave",
+                  "value": 10,
+                  "note": "dave still opening PRs"
+                },
+                {
+                  "signal_id": null,
+                  "metric": "prs_merged",
+                  "bucket": "2026-10-12",
+                  "entity": "alice",
+                  "value": 1,
+                  "note": "alice merged little despite opening 8"
+                }
+              ],
+              "alternative_explanations": [
+                "Some contributors moved to long-lived feature branches that are not counted on main"
+              ],
+              "suggested_check": "Compare the count of open, unmerged PR branches over time with commits on main to confirm the work is waiting rather than missing.",
+              "model_confidence": 0.65,
+              "adjustments": [
+                "moderate_signal_only"
+              ]
+            }
+          ],
+          "dataCaveats": [
+            "The window is fully synced and has no partial buckets, but the level-shift baselines rest on only 6 weekly buckets.",
+            "compare_windows used only 3 complete buckets in each sub-window, so its before and after medians (21 against 10) are rough.",
+            "PR titles are generic ('Change N'), so the data doesn't show why PRs were closed without merging or what was blocking them."
+          ],
+          "grounding": {
+            "status": "ok",
+            "rejected": [],
+            "unverifiedNumbers": [],
+            "droppedHypotheses": 0
+          },
+          "checks": {
+            "schema_and_grounding": {
+              "pass": true,
+              "reason": "schema valid, no evidence rejected"
+            },
+            "names_planted_metric": {
+              "pass": true,
+              "reason": "top hypothesis cites metric prs_merged"
+            },
+            "confidence_ordering": {
+              "pass": true,
+              "reason": "top confidence 0.6 vs control mean 0"
+            },
+            "unverified_numbers": {
+              "pass": true,
+              "reason": "none"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "concentration",
+      "expect": {
+        "metric": "review_concentration_top1",
+        "entity": "alice",
+        "bucket": "2026-09-28"
+      },
+      "seed": 4,
+      "perturbations": [
+        {
+          "type": "concentration",
+          "week": 5,
+          "login": "alice",
+          "share": 0.8
+        }
+      ],
+      "snapshot": {
+        "pullRequests": 207,
+        "reviews": 307,
+        "issues": 41,
+        "commits": 193
+      },
+      "window": {
+        "from": "2026-08-31T00:00:00.000Z",
+        "to": "2026-10-26T00:00:00.000Z"
+      },
+      "signals": [
+        {
+          "id": "35a12442bcde",
+          "detector": "robust_outlier",
+          "metric": "review_concentration_hhi",
+          "bucket": "2026-09-28",
+          "entity": null,
+          "observed": 0.66125,
+          "baselineMedian": 0.3408304498269896,
+          "score": 6.408391003460207,
+          "severity": "high"
+        },
+        {
+          "id": "26664b77a2f6",
+          "detector": "review_concentration",
+          "metric": "review_concentration_top1",
+          "bucket": "2026-09-28",
+          "entity": "alice",
+          "observed": 0.8,
+          "baselineMedian": null,
+          "score": 0.8,
+          "severity": "high"
+        }
+      ],
+      "runs": [
+        {
+          "run": 1,
+          "ok": true,
+          "problem": null,
+          "latencyMs": 15581,
+          "generationMs": 15548,
+          "toolCalls": 3,
+          "turns": 3,
+          "model": "claude-opus-5-5",
+          "usage": {
+            "inputTokens": 8,
+            "outputTokens": 1276,
+            "cacheReadTokens": 19782,
+            "cacheWriteTokens": 4040,
+            "costUsd": 0.049708
+          },
+          "topConfidence": 0.6,
+          "headline": "Review work piled onto alice for one week (2026-09-28), then returned to normal. Speed and throughput held steady.",
+          "narrative": "In the week of 2026-09-28, alice submitted 32 reviews, which was 0.8 of all reviews that week. In a normal week she does about 11 or 12. Review concentration (HHI) jumped to 0.66125, against a typical 0.3408304498269896. That week bob gave only 5 reviews and carol only 3, but both kept opening pull requests and committing code. So most of the review load shifted to one person for the week. Review speed did not suffer: the median time to first review was 5.3 hours, the lowest of the window, and merges and total review counts stayed steady. Concentration was back to its usual level the next week, so this looks like a one-off shift in who reviewed rather than a lasting trend.",
+          "hypotheses": [
+            {
+              "statement": "For the week of 2026-09-28, alice covered most reviews while bob and carol reviewed far less than usual. Both were still active as authors that week, which suggests a short-term change in who was assigned or available to review, not a team-wide slowdown.",
+              "confidence": 0.6,
+              "evidence": [
+                {
+                  "signal_id": "26664b77a2f6",
+                  "metric": "review_concentration_top1",
+                  "bucket": "2026-09-28",
+                  "entity": null,
+                  "value": 0.8,
+                  "note": "alice's share of all reviews that week"
+                },
+                {
+                  "signal_id": "35a12442bcde",
+                  "metric": "review_concentration_hhi",
+                  "bucket": "2026-09-28",
+                  "entity": null,
+                  "value": 0.66125,
+                  "note": "concentration roughly doubled the baseline"
+                },
+                {
+                  "signal_id": null,
+                  "metric": "reviews_given",
+                  "bucket": "2026-09-28",
+                  "entity": "alice",
+                  "value": 32,
+                  "note": "alice's reviews, about three times her usual weekly count"
+                },
+                {
+                  "signal_id": null,
+                  "metric": "reviews_given",
+                  "bucket": "2026-09-28",
+                  "entity": "bob",
+                  "value": 5,
+                  "note": "bob's reviews fell well below his usual level"
+                },
+                {
+                  "signal_id": null,
+                  "metric": "reviews_given",
+                  "bucket": "2026-09-28",
+                  "entity": "carol",
+                  "value": 3,
+                  "note": "carol's reviews fell sharply while she kept opening PRs"
+                }
+              ],
+              "alternative_explanations": [
+                "A temporary change in reviewer assignment (for example a CODEOWNERS change or a rotation) sent most PRs to alice",
+                "bob and carol were focused on their own pull requests or other work that week, so alice picked up the slack",
+                "alice ran a batch review pass on a backlog (several PRs got 2 reviews each)"
+              ],
+              "suggested_check": "Ask the team whether review assignment or the on-call/review rotation changed for the week of 2026-09-28, and check whether bob and carol had planned time away from reviewing.",
+              "model_confidence": 0.6,
+              "adjustments": []
+            }
+          ],
+          "dataCaveats": [
+            "The sync covers the full window and there are no partial buckets.",
+            "The spike lasted a single week, so it says little about any longer-term trend.",
+            "Only three reviewers are active, so one person's change in activity moves the concentration metrics a lot."
+          ],
+          "grounding": {
+            "status": "ok",
+            "rejected": [],
+            "unverifiedNumbers": [
+              11,
+              12,
+              0.3408304498269896
+            ],
+            "droppedHypotheses": 0
+          },
+          "checks": {
+            "schema_and_grounding": {
+              "pass": true,
+              "reason": "schema valid, no evidence rejected"
+            },
+            "names_planted_metric": {
+              "pass": true,
+              "reason": "top hypothesis cites metric review_concentration_top1, bucket 2026-09-28, entity alice"
+            },
+            "confidence_ordering": {
+              "pass": true,
+              "reason": "top confidence 0.6 vs control mean 0"
+            },
+            "unverified_numbers": {
+              "pass": false,
+              "reason": "3: 11, 12, 0.3408304498269896"
+            }
+          }
+        },
+        {
+          "run": 2,
+          "ok": true,
+          "problem": null,
+          "latencyMs": 15354,
+          "generationMs": 15299,
+          "toolCalls": 3,
+          "turns": 3,
+          "model": "claude-opus-5-5",
+          "usage": {
+            "inputTokens": 8,
+            "outputTokens": 1203,
+            "cacheReadTokens": 23382,
+            "cacheWriteTokens": 520,
+            "costUsd": 0.031368
+          },
+          "topConfidence": 0.7,
+          "headline": "Review load piled onto alice for the week of 2026-09-28, then returned to normal; latency and throughput held steady",
+          "narrative": "Most of the window was stable. Each week saw roughly 20 to 22 merges, a median time to first review of about six hours, and reviews shared fairly evenly between alice, bob and carol. The one exception was the week of 2026-09-28. That week alice submitted 32 of the 40 reviews, a top-reviewer share of 0.8, and the review concentration index rose to 0.66125 against a typical 0.3408304498269896. In the same week bob gave 5 reviews and carol gave 3, far below their usual weekly counts, so the others stepping back explains the jump more than any change in overall demand. Review speed did not suffer: median time to first review that week was 5.3 hours, the lowest in the window. By the following week alice was back at 11 reviews and bob had picked up 16, so this looks like a one-week reshuffle of reviewers, not an ongoing trend.",
+          "hypotheses": [
+            {
+              "statement": "For one week, bob and carol mostly stopped reviewing (possibly time off or other priorities), and alice covered almost all reviews. That temporarily concentrated review load on her without slowing reviews down.",
+              "confidence": 0.7,
+              "evidence": [
+                {
+                  "signal_id": "26664b77a2f6",
+                  "metric": "review_concentration_top1",
+                  "bucket": "2026-09-28",
+                  "entity": null,
+                  "value": 0.8,
+                  "note": "alice did 80% of reviews"
+                },
+                {
+                  "signal_id": "35a12442bcde",
+                  "metric": "review_concentration_hhi",
+                  "bucket": "2026-09-28",
+                  "entity": null,
+                  "value": 0.66125,
+                  "note": "concentration spiked vs baseline"
+                },
+                {
+                  "signal_id": null,
+                  "metric": "reviews_given",
+                  "bucket": "2026-09-28",
+                  "entity": "alice",
+                  "value": 32,
+                  "note": "alice reviews roughly tripled"
+                },
+                {
+                  "signal_id": null,
+                  "metric": "reviews_given",
+                  "bucket": "2026-09-28",
+                  "entity": "bob",
+                  "value": 5,
+                  "note": "bob reviews dropped"
+                },
+                {
+                  "signal_id": null,
+                  "metric": "reviews_given",
+                  "bucket": "2026-09-28",
+                  "entity": "carol",
+                  "value": 3,
+                  "note": "carol reviews dropped"
+                }
+              ],
+              "alternative_explanations": [
+                "Reviewer auto-assignment or CODEOWNERS briefly sent most PRs to alice",
+                "That week's PRs touched an area where alice is the main expert"
+              ],
+              "suggested_check": "Check whether bob and carol were away or reassigned that week, and whether the reviewer-assignment rules changed around 2026-09-28.",
+              "model_confidence": 0.7,
+              "adjustments": []
+            }
+          ],
+          "dataCaveats": [
+            "Weekly buckets with only three regular reviewers, so small changes in who reviews swing the concentration metrics a lot.",
+            "The concentration signal covers a single week and the next week returned to normal; one data point is not a trend."
+          ],
+          "grounding": {
+            "status": "ok",
+            "rejected": [],
+            "unverifiedNumbers": [
+              20,
+              22,
+              40,
+              0.3408304498269896,
+              11,
+              16
+            ],
+            "droppedHypotheses": 0
+          },
+          "checks": {
+            "schema_and_grounding": {
+              "pass": true,
+              "reason": "schema valid, no evidence rejected"
+            },
+            "names_planted_metric": {
+              "pass": true,
+              "reason": "top hypothesis cites metric review_concentration_top1, bucket 2026-09-28, entity alice"
+            },
+            "confidence_ordering": {
+              "pass": true,
+              "reason": "top confidence 0.7 vs control mean 0"
+            },
+            "unverified_numbers": {
+              "pass": false,
+              "reason": "6: 20, 22, 40, 0.3408304498269896, 11, 16"
+            }
+          }
+        },
+        {
+          "run": 3,
+          "ok": true,
+          "problem": null,
+          "latencyMs": 15127,
+          "generationMs": 15087,
+          "toolCalls": 3,
+          "turns": 2,
+          "model": "claude-opus-5-5",
+          "usage": {
+            "inputTokens": 6,
+            "outputTokens": 1334,
+            "cacheReadTokens": 14308,
+            "cacheWriteTokens": 1429,
+            "costUsd": 0.036711
+          },
+          "topConfidence": 0.6,
+          "headline": "For the week of 2026-09-28, alice did most of the code reviews while bob and carol did very few. It went back to normal the next week, and review speed and throughput held steady.",
+          "narrative": "The only unusual event in this window was the week of 2026-09-28. That week alice submitted 32 of the 40 reviews, a top-reviewer share of 0.8, and review concentration (HHI) roughly doubled to 0.66125 against a typical 0.3408304498269896. The cause looks like bob and carol stepping back from reviewing rather than more work arriving: bob gave only 5 reviews and carol only 3, while total reviews matched the week before. Review speed held up, with median time to first review at 5.3 hours, the lowest in the window, and merges stayed in their usual range. The next week the load spread back across all three reviewers. Separately, median issue time-to-close drifted upward over the window, but no detector flagged it.",
+          "hypotheses": [
+            {
+              "statement": "In the week of 2026-09-28, bob and carol were mostly unavailable for review, perhaps through leave, other priorities or a focus on their own pull requests, so alice covered almost all reviews for that week. This was a one-week gap in coverage, not a lasting change in who carries the review load.",
+              "confidence": 0.6,
+              "evidence": [
+                {
+                  "signal_id": "26664b77a2f6",
+                  "metric": "review_concentration_top1",
+                  "bucket": "2026-09-28",
+                  "entity": null,
+                  "value": 0.8,
+                  "note": "alice's share of reviews that week"
+                },
+                {
+                  "signal_id": "35a12442bcde",
+                  "metric": "review_concentration_hhi",
+                  "bucket": "2026-09-28",
+                  "entity": null,
+                  "value": 0.66125,
+                  "note": "concentration spike"
+                },
+                {
+                  "signal_id": null,
+                  "metric": "reviews_given",
+                  "bucket": "2026-09-28",
+                  "entity": "alice",
+                  "value": 32,
+                  "note": "alice's reviews, about 11-14 in other weeks"
+                },
+                {
+                  "signal_id": null,
+                  "metric": "reviews_given",
+                  "bucket": "2026-09-28",
+                  "entity": "bob",
+                  "value": 5,
+                  "note": "bob's reviews fell sharply"
+                },
+                {
+                  "signal_id": null,
+                  "metric": "reviews_given",
+                  "bucket": "2026-09-28",
+                  "entity": "carol",
+                  "value": 3,
+                  "note": "carol's reviews fell sharply"
+                }
+              ],
+              "alternative_explanations": [
+                "A deliberate rotation that made alice the designated reviewer for that week",
+                "A batch of pull requests in alice's area of ownership, such as carol's #126, #130, #131 and #132, sent to her by CODEOWNERS"
+              ],
+              "suggested_check": "Ask the team whether bob and carol were away or reassigned that week, and look at how reviewers were assigned on #126 to #135.",
+              "model_confidence": 0.6,
+              "adjustments": []
+            }
+          ],
+          "dataCaveats": [
+            "No buckets are partial and sync coverage is complete for the window.",
+            "The window has only 8 weekly buckets, so baselines rest on 7 weeks and the HHI outlier score uses a floor scale.",
+            "There are only three regular reviewers, so a single person's absence moves the concentration metrics a lot.",
+            "The upward drift in issue time-to-close was not flagged by any detector and was not investigated."
+          ],
+          "grounding": {
+            "status": "ok",
+            "rejected": [],
+            "unverifiedNumbers": [
+              40,
+              0.3408304498269896
+            ],
+            "droppedHypotheses": 0
+          },
+          "checks": {
+            "schema_and_grounding": {
+              "pass": true,
+              "reason": "schema valid, no evidence rejected"
+            },
+            "names_planted_metric": {
+              "pass": true,
+              "reason": "top hypothesis cites metric review_concentration_top1, bucket 2026-09-28, entity alice"
+            },
+            "confidence_ordering": {
+              "pass": true,
+              "reason": "top confidence 0.6 vs control mean 0"
+            },
+            "unverified_numbers": {
+              "pass": true,
+              "reason": "2: 40, 0.3408304498269896"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "commit_only",
+      "expect": {
+        "control": true
+      },
+      "seed": 6,
+      "perturbations": [
+        {
+          "type": "disable_prs"
+        }
+      ],
+      "snapshot": {
+        "pullRequests": 0,
+        "reviews": 0,
+        "issues": 0,
+        "commits": 193
+      },
+      "window": {
+        "from": "2026-08-31T00:00:00.000Z",
+        "to": "2026-10-26T00:00:00.000Z"
+      },
+      "signals": [],
+      "runs": [
+        {
+          "run": 1,
+          "ok": true,
+          "problem": null,
+          "latencyMs": 5848,
+          "generationMs": 5828,
+          "toolCalls": 0,
+          "turns": 1,
+          "model": "claude-opus-5-5",
+          "usage": {
+            "inputTokens": 4,
+            "outputTokens": 381,
+            "cacheReadTokens": 4514,
+            "cacheWriteTokens": 1348,
+            "costUsd": 0.015279
+          },
+          "topConfidence": 0,
+          "headline": "Commit activity on evalco/service-6 held steady all window, and no unusual changes showed up",
+          "narrative": "Between 2026-08-31 and 2026-10-26, weekly commits to main stayed in a narrow band, from 21 to 27. Every week had 4 active authors and a bus factor of 2. Commits were spread fairly evenly across those authors: alice had 53, dave 53, bob 45 and carol 42. None of the automated detectors flagged anything, so there's no change in collaboration to explain. Pull request and issue data weren't available for this repository, so this briefing can't say anything about review speed, review load or who carries it.",
+          "hypotheses": [],
+          "dataCaveats": [
+            "Pull request data isn't available, so review speed, time to merge, review volume, how concentrated reviewing is, and the reviewer and merger leaderboards are all missing.",
+            "Issue data isn't available, so there are no figures for issues opened, issues closed or time to close.",
+            "The figures only cover commits on the default branch, so work on other branches doesn't show up in commit counts or author activity.",
+            "All 8 weekly buckets are complete and the sync covers the whole window."
+          ],
+          "grounding": {
+            "status": "ok",
+            "rejected": [],
+            "unverifiedNumbers": [
+              6,
+              21,
+              27,
+              4,
+              2,
+              53,
+              45,
+              42
+            ],
+            "droppedHypotheses": 0
+          },
+          "checks": {
+            "schema_and_grounding": {
+              "pass": true,
+              "reason": "schema valid, no evidence rejected"
+            },
+            "names_planted_metric": {
+              "pass": null,
+              "reason": "control case"
+            },
+            "confidence_ordering": {
+              "pass": true,
+              "reason": "no hypotheses"
+            },
+            "unverified_numbers": {
+              "pass": false,
+              "reason": "8: 6, 21, 27, 4, 2, 53, 45, 42"
+            }
+          }
+        },
+        {
+          "run": 2,
+          "ok": true,
+          "problem": null,
+          "latencyMs": 4640,
+          "generationMs": 4615,
+          "toolCalls": 0,
+          "turns": 1,
+          "model": "claude-opus-5-5",
+          "usage": {
+            "inputTokens": 4,
+            "outputTokens": 358,
+            "cacheReadTokens": 5862,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.008348
+          },
+          "topConfidence": 0,
+          "headline": "Commit activity on evalco/service-6 held steady across all eight weeks, and there were no unusual signals",
+          "narrative": "No detector fired in this window, and the commit data shows a stable pattern. Weekly commits to main stayed between 21 and 27. Every week had the same 4 active authors, and the commit-based bus factor was 2 throughout. Over the whole window the work was spread fairly evenly: alice and dave each had 53 commits, bob had 45 and carol had 42. Pull request and issue data was not available, so review latency, review load and who carries it could not be assessed.",
+          "hypotheses": [],
+          "dataCaveats": [
+            "Pull request data is unavailable for this repository and window. Review latency, throughput, review load and reviewer concentration could not be measured, and the merged-PR counts on the leaderboard show as 0.",
+            "Issue data is unavailable, so issue flow and time to close could not be assessed.",
+            "The commit metrics only count commits on the default branch (main). Work on other branches is not included.",
+            "All eight weekly buckets are complete and the sync covers the whole window."
+          ],
+          "grounding": {
+            "status": "ok",
+            "rejected": [],
+            "unverifiedNumbers": [
+              6,
+              21,
+              27,
+              4,
+              2,
+              53,
+              45,
+              42
+            ],
+            "droppedHypotheses": 0
+          },
+          "checks": {
+            "schema_and_grounding": {
+              "pass": true,
+              "reason": "schema valid, no evidence rejected"
+            },
+            "names_planted_metric": {
+              "pass": null,
+              "reason": "control case"
+            },
+            "confidence_ordering": {
+              "pass": true,
+              "reason": "no hypotheses"
+            },
+            "unverified_numbers": {
+              "pass": false,
+              "reason": "8: 6, 21, 27, 4, 2, 53, 45, 42"
+            }
+          }
+        },
+        {
+          "run": 3,
+          "ok": true,
+          "problem": null,
+          "latencyMs": 5098,
+          "generationMs": 5062,
+          "toolCalls": 0,
+          "turns": 1,
+          "model": "claude-opus-5-5",
+          "usage": {
+            "inputTokens": 4,
+            "outputTokens": 325,
+            "cacheReadTokens": 5862,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.007688
+          },
+          "topConfidence": 0,
+          "headline": "Commit activity on evalco/service-6 held steady all window; no PR or issue data was available",
+          "narrative": "No detector fired, and the commit series looks stable. Weekly commits to main stayed between 21 and 27, and the same 4 authors were active every week. The weekly bus factor stayed at 2 the whole time. Over the window, alice and dave made 53 commits each, bob 45 and carol 42, so the work is spread fairly evenly. This data cannot show anything about review latency, throughput or who carries the review load, because pull request and issue data were not available.",
+          "hypotheses": [],
+          "dataCaveats": [
+            "Pull request data is unavailable, so there is nothing on review latency, merge throughput, review load or review concentration.",
+            "Issue data is unavailable, so there is nothing on issue flow or time to close.",
+            "Only commits to the default branch are counted. Work on other branches and review effort does not show up in these numbers.",
+            "Sync covers the full window and no bucket is marked partial."
+          ],
+          "grounding": {
+            "status": "ok",
+            "rejected": [],
+            "unverifiedNumbers": [
+              6,
+              21,
+              27,
+              4,
+              2,
+              53,
+              45,
+              42
+            ],
+            "droppedHypotheses": 0
+          },
+          "checks": {
+            "schema_and_grounding": {
+              "pass": true,
+              "reason": "schema valid, no evidence rejected"
+            },
+            "names_planted_metric": {
+              "pass": null,
+              "reason": "control case"
+            },
+            "confidence_ordering": {
+              "pass": true,
+              "reason": "no hypotheses"
+            },
+            "unverified_numbers": {
+              "pass": false,
+              "reason": "8: 6, 21, 27, 4, 2, 53, 45, 42"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

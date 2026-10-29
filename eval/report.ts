@@ -239,6 +239,10 @@ export function renderMarkdown(r: EvalReport): string {
       `- control mean top confidence: ${r.controlMeanTopConfidence ?? 'n/a (control not run)'}`,
     );
   }
+  lines.push(
+    '',
+    'Methodology: every check is deterministic (no model judge). `names_planted_metric` grades the top hypothesis (highest calibrated confidence): one evidence item must cite the planted metric (fact suffixes such as `.item` or `.observed` count) in the planted bucket, and the expected entity is matched across that hypothesis (the matching item, the signal it cites, or another evidence item), because ledger facts for signal metrics carry `entity: null` by design.',
+  );
   lines.push('');
 
   if (!r.dry) {

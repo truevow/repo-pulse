@@ -132,6 +132,9 @@ export function gradeRun(
             .join('; ')}`,
         };
 
+  // names_planted_metric: the expected entity is matched across the top
+  // hypothesis (the matching item, the signal it cites, or another evidence
+  // item), because ledger facts for signal metrics carry entity = null by design.
   const top = topHypothesis(r.hypotheses);
   let names_planted_metric: CheckResult;
   if (!isPlanted(expect)) {

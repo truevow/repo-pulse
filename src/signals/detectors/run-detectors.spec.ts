@@ -25,6 +25,35 @@ describe('runDetectors', () => {
     expect(out[1].score).toBeCloseTo(16 / 1.4826, 10);
   });
 
+  it('prefers the signal that names an entity over a larger-score outlier on the same metric+bucket', () => {
+    const out = runDetectors({
+      size: 'week',
+      // baseline 0.4 with floor scale 0.05 -> outlier z at 06-01 = 0.4 / 0.05 = 8
+      series: {
+        review_concentration_top1: s([0.4, 0.4, 0.4, 0.4, 0.4, 0.8]),
+      },
+      concentration: [
+        {
+          bucket: '2026-06-01',
+          partial: false,
+          reviews: 20,
+          top1Share: 0.8,
+          topLogin: 'alice',
+        },
+      ],
+    });
+    const atB = out.filter(
+      (x) =>
+        x.metric === 'review_concentration_top1' && x.bucket === '2026-06-01',
+    );
+    expect(atB).toHaveLength(1);
+    expect(atB[0]).toMatchObject({
+      detector: 'review_concentration',
+      entity: 'alice',
+      score: 0.8,
+    });
+  });
+
   it('sorts high before moderate', () => {
     const out = runDetectors({
       size: 'week',
