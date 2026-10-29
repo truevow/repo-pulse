@@ -44,7 +44,11 @@ GitHub token.
 
 - `npm run demo:seed -- <case>` loads a different eval case instead. The cases
   are `control`, `reviewer_dropout`, `throughput_shift`, `concentration` and
-  `commit_only`. Only one case is loaded at a time.
+  `commit_only`, and each loads under its own name (`evalco/service-<seed>`;
+  the script prints the name and window).
+- The fixtures reuse synthetic GitHub ids, so `demo:seed` first deletes every
+  repository owned by `evalco`: only one case is loaded at a time. It refuses
+  to load if another repository already holds those ids.
 - `npm run db:seed` loads every snapshot in `seed/`. The committed snapshot of
   `dataelement/dsh-desktop` (`seed/dsh-desktop.json`) is added by the live-sync
   step. Until then, `db:seed` reports that `seed/` is empty, and
@@ -69,30 +73,37 @@ set From 2026-08-31 and To 2026-10-26, then click "Load insights" and
 
 ## Docker
 
-```bash
-cp .env.example .env        # optional; compose reads it when present
-docker compose up --build
-```
-
-The `app` container waits for a healthy `db`, runs `prisma migrate deploy`,
-and serves on port 3000 as the non-root `node` user. It reads
-`ANTHROPIC_API_KEY` and `GITHUB_TOKEN` from `.env`. Postgres is also published
-on `localhost:5432`, so you can load the demo fixture from the host while the
-stack runs. The image does not ship `eval/`.
+The container runs the app, but today the data still has to be loaded from
+the host: `seed/` is empty until the live-sync step adds
+`seed/dsh-desktop.json`, and the image does not ship `eval/`, so
+`demo:seed` cannot run inside it.
 
 ```bash
+cp .env.example .env        # required: the host-side demo:seed needs DATABASE_URL
+docker compose up --build -d
 npm install && npm run demo:seed
 ```
 
-Once `seed/dsh-desktop.json` exists, `docker compose exec app npm run db:seed`
-loads it from inside the container.
+- **Startup.** The `app` container waits for a healthy `db`, runs
+  `prisma migrate deploy`, and serves on port 3000 as the non-root `node`
+  user.
+- **Environment.** Compose passes every variable in `.env` to the container,
+  then overrides `DATABASE_URL` (pointing at the `db` service) and `PORT`.
+  `NODE_ENV` from `.env` (`development` in the template) overrides the
+  image's `production` default, which gives pretty logs instead of JSON.
+- **Database.** Postgres is published on `localhost:5432`, so the host-side
+  seed writes to the database the container reads.
+- **Seed snapshot.** Once `seed/dsh-desktop.json` exists,
+  `docker compose exec app npm run db:seed` loads it from inside the
+  container, with no Node needed on the host.
 
 ## Live sync
 
 Live sync needs `GITHUB_TOKEN`. A fine-grained token with read-only access to
 public repositories and no other permissions is enough. The default demo
-repository is `anomalyco/opencode`, which has about 6,500 PRs and 6,600 issues
-in eight weeks.
+repository is `anomalyco/opencode`. Its volume is an estimate from the design
+phase, about 6,500 PRs and 6,600 issues in eight weeks, and the live-sync step
+will replace it with measured numbers.
 
 ```bash
 # Start a sync of the default window (last 8 complete ISO weeks).
@@ -125,20 +136,25 @@ curl -s http://localhost:3000/api/v1/repos/anomalyco/opencode/narrative
 ## Architecture
 
 ```
-                 +--------------------- NestJS app (/api/v1) ----------------------+
- api.github.com  |  ingestion             signals                synthesis         |  api.anthropic.com
-  (GraphQL v4) <-+- sync jobs:            SQL aggregates (15     bounded tool loop -+-> Messages API
-                 |  POST sync -> 202      metrics/bucket),       (4 read-only tools, |  (Opus 5.5, tool
-                 |  in-process runner,    leaderboards,          max 6 iterations)   |   runner, structured
-                 |  one job per repo      4 detectors            grounding,          |   output, caching)
-                 |        |                   ^   |              calibration, cache  |
-                 +--------|-------------------|---|--------------------^-|-----------+
-                          v                   |   v                    | v
-                 +----------------------------------------------------------------+
-                 | Postgres 16: repositories, sync_jobs, actors, pull_requests,   |
-                 | reviews, issues, commits, narratives (cache)                   |
-                 +----------------------------------------------------------------+
-                          static demo page (public/) and Swagger UI (/docs)
+   api.github.com (GraphQL v4)                       api.anthropic.com (Messages API)
+             ^                                                       ^
+             | sync jobs only                                        | cache misses only
++------------|--------------- NestJS app (/api/v1) ------------------|------------+
+|  ingestion                   signals                   synthesis                |
+|  POST sync -> 202 +          15 SQL metrics per        bounded tool loop:       |
+|  Location, in-process        bucket, leaderboards,     Opus 5.5, 4 read-only    |
+|  runner, one job per         4 detectors        -----> tools, max 6 iterations; |
+|  repo, rate-limit aware                    insights,   grounding, calibration   |
+|                                          tool queries                           |
+|      |                           ^                         |        ^           |
++------|---------------------------|-------------------------|--------|-----------+
+       | writes                    | reads                   | writes | reads
+       v                           |                         v        |  (narratives)
++---------------------------------------------------------------------------------+
+| Postgres 16: repositories, sync_jobs, actors, pull_requests, reviews, issues,   |
+|              commits, narratives (cache)                                        |
++---------------------------------------------------------------------------------+
+           static demo page (public/) and Swagger UI (/docs) on the same app
 ```
 
 - **Ingestion** (`src/ingestion`, `src/github`) is the only code that calls
@@ -236,8 +252,8 @@ Unhandled errors return 500 `internal`, with no internal detail.
       "metrics": {
         "prs_opened": 25, "prs_merged": 17, "prs_closed_unmerged": 1,
         "time_to_first_review_p50_h": 21.53333333333333, "time_to_merge_p50_h": 41.38333333333333,
-        "reviews_submitted": 33, "approvals": 22,
-        "review_concentration_top1": 0.3939393939393939, "review_concentration_hhi": 0.34618916437098257,
+        "reviews_submitted": 31, "approvals": 21,
+        "review_concentration_top1": 0.3870967741935484, "review_concentration_hhi": 0.3506763787721124,
         "issues_opened": 5, "issues_closed": 4, "issue_time_to_close_p50_h": 115.94999999999999,
         "commits": 20, "active_authors": 4, "bus_factor_50": 2
       }
@@ -245,7 +261,7 @@ Unhandled errors return 500 `internal`, with no internal detail.
   ],
   "leaderboards": {
     "contributors": [{ "login": "dave", "mergedPrs": 50, "commits": 53, "linesChanged": 12394 }],
-    "reviewers": [{ "login": "alice", "reviews": 111, "approvals": 79 }],
+    "reviewers": [{ "login": "alice", "reviews": 108, "approvals": 77 }],
     "mergers": [{ "login": "alice", "prsMerged": 63 }]
   },
   "signals": [

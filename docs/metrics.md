@@ -47,9 +47,11 @@ Counting rules that apply everywhere:
     and `bus_factor_50`.
 - **Unlinked commits.** A commit whose author has no GitHub account is
   attributed to its author name. Each distinct name counts as one author.
-- **Unavailable entities.** When a repository has pull requests or issues
-  disabled, those metrics are `null` (not 0), and `availability` says
-  `unavailable`.
+- **Unavailable entities.** Pull requests are `unavailable` when the
+  repository has no pull requests at all (GitHub's `pullRequests.totalCount`
+  is 0 at sync time). Issues are `unavailable` when issues are disabled
+  (`hasIssuesEnabled` is false). Either way, those metrics are `null` (not 0),
+  and `availability` says `unavailable`.
 - **Empty buckets.** Count metrics are `0` in an empty bucket. Medians and
   ratios are `null` when there is nothing to take a median or share of.
   `bus_factor_50` is `null` when a bucket has no commits.
@@ -229,7 +231,7 @@ The signal's fields:
 - **Severity:** `high` when the drop is at least 2 scale units, otherwise
   `moderate`.
 
-**Spec difference.** The spec says opened must be "at or above its baseline".
+**Spec difference (ruling R18).** The spec says opened must be "at or above its baseline".
 The code requires opened to stay within one scale unit of its median, on
 either side. That reads "kept being opened at the usual rate while merges
 fell". A surge in openings is left to the outlier detector on `prs_opened`.

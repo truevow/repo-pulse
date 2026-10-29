@@ -11,9 +11,11 @@ const DAY_MS = 86_400_000;
  * in DATABASE_URL, so the API can be tried without a GitHub token.
  * Usage: npm run demo:seed [-- <case>]
  *
- * Fixtures reuse GitHub ids (PR_1, I_1, ...) across cases, so the previously
- * loaded fixture repositories (owner `evalco`) are deleted first: one case at
- * a time. Real repositories are never touched.
+ * Fixtures reuse synthetic GitHub ids (PR_<n>, I_<n>) across cases, so the
+ * repositories owned by `evalco` (previously loaded cases) are deleted first:
+ * one case at a time. If another repository already holds one of those ids
+ * (other synthetic test data), the load would re-point its rows, so the
+ * script refuses instead.
  */
 async function main(): Promise<void> {
   const name = process.argv[2] ?? 'latency_spike';
@@ -27,9 +29,30 @@ async function main(): Promise<void> {
   const snapshot = buildSnapshot(found.spec);
   const prisma = new PrismaClient();
   try {
-    await prisma.repository.deleteMany({
-      where: { owner: snapshot.repository.owner },
-    });
+    const owner = snapshot.repository.owner;
+    await prisma.repository.deleteMany({ where: { owner } });
+    const notOurs = { repository: { owner: { not: owner } } };
+    const clash =
+      (await prisma.pullRequest.findFirst({
+        where: {
+          githubId: { in: snapshot.pullRequests.map((p) => p.githubId) },
+          ...notOurs,
+        },
+        select: { repository: { select: { owner: true, name: true } } },
+      })) ??
+      (await prisma.issue.findFirst({
+        where: {
+          githubId: { in: snapshot.issues.map((i) => i.githubId) },
+          ...notOurs,
+        },
+        select: { repository: { select: { owner: true, name: true } } },
+      }));
+    if (clash) {
+      const { owner: o, name: n } = clash.repository;
+      throw new Error(
+        `${o}/${n} already uses this fixture's synthetic GitHub ids; use an empty database`,
+      );
+    }
     await loadSnapshot(prisma, snapshot);
   } finally {
     await prisma.$disconnect();

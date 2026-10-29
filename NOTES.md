@@ -15,7 +15,7 @@ npm run start:dev       # then open http://localhost:3000/
 | Path | Command |
 |---|---|
 | Live sync | Set `GITHUB_TOKEN`, then `POST /api/v1/repos/anomalyco/opencode/sync` |
-| Zero-Node demo | `docker compose up --build` |
+| Docker, with data loaded from the host until `seed/dsh-desktop.json` lands | `docker compose up --build -d`, then `npm run demo:seed` on the host |
 | Tests | `npm test`, `npm run test:e2e`, `npm run eval -- --dry` (free) or `npm run eval` (about $0.75) |
 
 ## Architecture tour and main decisions
@@ -122,8 +122,9 @@ pre-coverage weeks read as an outlier (R10), a dedup rule that dropped the
 reviewer's name (R13), a tool schema the live API rejected, and an SDK path
 that turned refusals into 500s.
 
-At runtime, the service calls the Claude API (Opus 5.5) for narratives. Real
-API spend during the build was roughly $2: about $0.30 of smoke tests, plus
+At runtime, the service calls the Claude API (Opus 5.5) for narratives. The
+service's own Claude API spend during the build (not Claude Code usage) was
+roughly $2: about $0.30 of smoke tests, plus
 two full eval runs at $0.77 and $0.75. One smoke-test response shows the
 effect of caching: a repeat with the prompt prefix cached read 14,220 tokens
 from cache, made 3 tool calls, and cost $0.043 in 17 s.
