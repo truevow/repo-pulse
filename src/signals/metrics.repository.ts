@@ -268,6 +268,20 @@ export class MetricsRepository {
     return rows.map((row) => toExample(q, spec, row));
   }
 
+  /**
+   * The stored login matching `login` case-insensitively (GitHub logins are
+   * case-insensitive), or null when no such actor exists.
+   */
+  async resolveLogin(login: string): Promise<string | null> {
+    const actor = await this.prisma.actor.findFirst({
+      where: { login: { equals: login, mode: 'insensitive' } },
+      orderBy: { id: 'asc' },
+      select: { login: true },
+    });
+    return actor?.login ?? null;
+  }
+
+  /** Per-bucket activity for a stored login (resolve it with resolveLogin). */
   async contributorActivity(
     q: MetricsQuery & { login: string },
   ): Promise<ContributorActivityRow[]> {

@@ -23,11 +23,20 @@ interface Rule {
 
 const cap = (limit: number) => (c: number) => Math.min(c, limit);
 
+/**
+ * Signals an evidence item genuinely backs: the id must resolve, and the
+ * item's base metric (before any `.item`, `.observed`, ... suffix) and bucket
+ * must be the signal's own. An unrelated fact cannot borrow a signal's id to
+ * lift the cap. Grounding is unaffected: it checks values, not this pairing.
+ */
 function citedSignals(h: Hypothesis, ctx: CalibrationContext): Signal[] {
   return h.evidence.flatMap((e) => {
     const s =
       e.signal_id === null ? undefined : ctx.signalsById.get(e.signal_id);
-    return s ? [s] : [];
+    if (!s) return [];
+    const sameMetric = e.metric.split('.')[0] === s.metric;
+    const sameBucket = e.bucket !== null && e.bucket === s.bucket;
+    return sameMetric && sameBucket ? [s] : [];
   });
 }
 
@@ -40,7 +49,7 @@ const RULES: Rule[] = [
   },
   {
     name: 'no_signal_cited',
-    // No cited id resolves to a known signal.
+    // No item backs a known signal (see citedSignals).
     applies: (h, ctx) => citedSignals(h, ctx).length === 0,
     adjust: cap(0.5),
   },

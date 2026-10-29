@@ -95,6 +95,35 @@ describe('calibrate', () => {
     expect(mixed.adjustments).toEqual([]);
   });
 
+  it('credits a signal only on an item with its metric and bucket', () => {
+    const item = (over: Partial<Evidence>): Evidence => ({
+      ...ev('high'),
+      ...over,
+    });
+    // An unrelated fact cannot borrow the signal's id.
+    const unrelated = calibrate(
+      hyp(0.8, [
+        item({ metric: 'commits' }),
+        item({ bucket: '2026-08-31' }),
+        item({ bucket: null }),
+      ]),
+      ctx(),
+    );
+    expect(unrelated.confidence).toBe(0.5);
+    expect(unrelated.adjustments).toEqual(['no_signal_cited']);
+
+    // Derived facts share the base metric: `<metric>.item`, `.baseline_median`.
+    const derived = calibrate(
+      hyp(0.8, [
+        item({ metric: 'prs_merged.item', entity: '#1' }),
+        item({ metric: 'prs_merged.baseline_median' }),
+      ]),
+      ctx(),
+    );
+    expect(derived.confidence).toBe(0.8);
+    expect(derived.adjustments).toEqual([]);
+  });
+
   it('multiplies by 0.8 after a rejection and rounds to 2 decimals', () => {
     const c = calibrate(
       hyp(0.9, [ev('high'), ev(null)]),

@@ -177,6 +177,21 @@ describe('agent tools (e2e)', () => {
     ).toBe(0);
   });
 
+  it('get_contributor_activity resolves login casing to the stored login', async () => {
+    const t = tool('get_contributor_activity');
+    const res = JSON.parse(await t.run(t.parse({ login: 'ALICE' })));
+    expect(res.login).toBe('alice');
+    expect(res.rows).toEqual(EXPECTED_ALICE_ACTIVITY);
+  });
+
+  it('get_contributor_activity reports an unknown login and records nothing', async () => {
+    const t = tool('get_contributor_activity');
+    const before = ctx.ledger.size;
+    const res = JSON.parse(await t.run(t.parse({ login: 'nobody-here' })));
+    expect(res).toEqual({ error: 'unknown_login', login: 'nobody-here' });
+    expect(ctx.ledger.size).toBe(before);
+  });
+
   it('validates logins', () => {
     const t = tool('get_contributor_activity');
     expect(() => t.parse({ login: 'bad login!' })).toThrow();

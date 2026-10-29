@@ -151,7 +151,12 @@ function contributorActivity(ctx: ToolContext) {
       login: z.string().regex(/^[A-Za-z0-9-]{1,39}(\[bot\])?$/),
     }),
     strict: true,
-    run: async ({ login }) => {
+    run: async ({ login: requested }) => {
+      // An unknown login must not come back as a series of grounded zeros.
+      const login = await ctx.metrics.resolveLogin(requested);
+      if (login === null) {
+        return json({ error: 'unknown_login', login: requested });
+      }
       const rows = await ctx.metrics.contributorActivity({
         ...ctx.query,
         login,
