@@ -1,6 +1,7 @@
 import { METRIC_UNITS, type MetricName } from '../metric-names';
 import {
   DETECTOR_PARAMETERS,
+  type DetectorParameters,
   type SeriesPoint,
   type Signal,
 } from '../signal.types';
@@ -16,7 +17,7 @@ import {
 export function detectOutliers(
   metric: MetricName,
   series: SeriesPoint[],
-  p: typeof DETECTOR_PARAMETERS = DETECTOR_PARAMETERS,
+  p: DetectorParameters = DETECTOR_PARAMETERS,
 ): Signal[] {
   const unit = METRIC_UNITS[metric];
   const points = completePoints(series);

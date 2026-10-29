@@ -1,5 +1,6 @@
 import {
   DETECTOR_PARAMETERS,
+  type DetectorParameters,
   type Baseline,
   type SeriesPoint,
   type Signal,
@@ -28,7 +29,7 @@ function baselineExcluding(
 export function detectThroughputDivergence(
   opened: SeriesPoint[],
   merged: SeriesPoint[],
-  p: typeof DETECTOR_PARAMETERS = DETECTOR_PARAMETERS,
+  p: DetectorParameters = DETECTOR_PARAMETERS,
 ): Signal[] {
   const openedPoints = completePoints(opened);
   const mergedPoints = completePoints(merged);

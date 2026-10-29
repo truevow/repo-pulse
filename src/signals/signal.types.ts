@@ -55,6 +55,21 @@ export interface ConcentrationRow {
   topLogin: string | null;
 }
 
+export interface DetectorParameters {
+  readonly outlierZ: number;
+  readonly highSeverityZ: number;
+  readonly minBaseline: number;
+  readonly levelShiftRecentBuckets: {
+    readonly week: number;
+    readonly day: number;
+  };
+  readonly concentrationTop1Share: number;
+  readonly concentrationMinReviews: number;
+  readonly concentrationHighShare: number;
+  readonly divergenceScaleUnits: number;
+  readonly divergenceHighScaleUnits: number;
+}
+
 /** Every detector threshold in one place; echoed in responses as `parameters`. */
 export const DETECTOR_PARAMETERS = {
   outlierZ: 3,
@@ -66,6 +81,4 @@ export const DETECTOR_PARAMETERS = {
   concentrationHighShare: 0.75,
   divergenceScaleUnits: 1,
   divergenceHighScaleUnits: 2,
-} as const;
-
-export type DetectorParameters = typeof DETECTOR_PARAMETERS;
+} as const satisfies DetectorParameters;

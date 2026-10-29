@@ -1,5 +1,5 @@
 import { runDetectors } from './run-detectors';
-import type { SeriesPoint } from '../signal.types';
+import { DETECTOR_PARAMETERS, type SeriesPoint } from '../signal.types';
 
 const s = (vals: (number | null)[], partialLast = false): SeriesPoint[] =>
   vals.map((v, i) => ({
@@ -64,10 +64,40 @@ describe('runDetectors', () => {
       concentration: [],
     });
     const b7 = out.filter((x) => x.bucket === '2026-07-01');
-    // at 07-01: outlier and divergence both score -9 / 1.5 = -6, level shift -4.5 / 1.5 = -3; one survives
+    // at 07-01: outlier and divergence both score -9 / 1.5 = -6 (high), level shift
+    // -4.5 / 1.5 = -3; the tie goes to the more specific detector
     expect(b7).toHaveLength(1);
-    expect(b7[0].metric).toBe('prs_merged');
-    expect(b7[0].score).toBe(-6);
+    expect(b7[0]).toMatchObject({
+      detector: 'throughput_divergence',
+      metric: 'prs_merged',
+      severity: 'high',
+      score: -6,
+    });
+  });
+
+  it('keeps a high divergence over a moderate outlier with the same score', () => {
+    const series = {
+      prs_opened: s([20, 20, 20, 20, 20, 20, 20, 20]),
+      prs_merged: s([15, 16, 14, 15, 16, 15, 9, 15]),
+    };
+    // merged baseline floor 1.5: outlier z = -6 / 1.5 = -4 (moderate); divergence drop
+    // 6 >= 2 * 1.5 (high), same score; level shift -3 / 1.5 = -2 is not flagged
+    const out = runDetectors({ size: 'week', series, concentration: [] });
+    expect(out.map((x) => [x.detector, x.bucket, x.score, x.severity])).toEqual(
+      [['throughput_divergence', '2026-07-01', -4, 'high']],
+    );
+  });
+
+  it('accepts parameter overrides', () => {
+    // floor scale 1 -> score 2.6: below the default 3, above an override of 2.5
+    const input = {
+      size: 'week' as const,
+      series: { commits: s([10, 10, 10, 10, 10, 12.6]) },
+      concentration: [],
+    };
+    expect(runDetectors(input)).toEqual([]);
+    const p = { ...DETECTOR_PARAMETERS, outlierZ: 2.5 };
+    expect(runDetectors(input, p).map((x) => x.bucket)).toEqual(['2026-06-01']);
   });
 
   it('returns nothing for empty input', () => {

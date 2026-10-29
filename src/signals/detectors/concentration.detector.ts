@@ -1,5 +1,6 @@
 import {
   DETECTOR_PARAMETERS,
+  type DetectorParameters,
   type ConcentrationRow,
   type Signal,
 } from '../signal.types';
@@ -10,7 +11,7 @@ const METRIC = 'review_concentration_top1';
 /** Flags complete buckets where one reviewer submitted most of a meaningful number of reviews. */
 export function detectReviewConcentration(
   rows: ConcentrationRow[],
-  p: typeof DETECTOR_PARAMETERS = DETECTOR_PARAMETERS,
+  p: DetectorParameters = DETECTOR_PARAMETERS,
 ): Signal[] {
   return rows.flatMap((row): Signal[] => {
     const { bucket, reviews, top1Share: share, topLogin } = row;

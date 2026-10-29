@@ -2,6 +2,7 @@ import type { BucketSize } from '../buckets';
 import { METRIC_UNITS, type MetricName } from '../metric-names';
 import {
   DETECTOR_PARAMETERS,
+  type DetectorParameters,
   type SeriesPoint,
   type Signal,
 } from '../signal.types';
@@ -19,7 +20,7 @@ export function detectLevelShift(
   metric: MetricName,
   series: SeriesPoint[],
   size: BucketSize,
-  p: typeof DETECTOR_PARAMETERS = DETECTOR_PARAMETERS,
+  p: DetectorParameters = DETECTOR_PARAMETERS,
 ): Signal[] {
   const k = p.levelShiftRecentBuckets[size];
   const points = completePoints(series);
