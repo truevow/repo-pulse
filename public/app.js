@@ -43,6 +43,8 @@
   const $ = (id) => document.getElementById(id);
   const out = { sync: $('sync-out'), insights: $('insights-out'), narrative: $('narrative-out') };
   let pollTimer = null;
+  let pollToken = 0; // bumped per sync; a poll from an older sync never renders or re-arms
+  let lastJobStatus = null;
   let signalAnchors = new Set();
 
   // ---- DOM helpers ---------------------------------------------------------
@@ -168,12 +170,20 @@
     );
   }
 
+  /** The page's only live region: announces starts and outcomes, never the ticking timer. */
+  function announce(message) {
+    const region = $('status');
+    region.textContent = '';
+    setTimeout(() => (region.textContent = message), 50);
+  }
+
   /** Disables the buttons while `task` runs and marks the output busy. */
   async function busy(buttons, target, message, task) {
     buttons.forEach((b) => (b.disabled = true));
     target.setAttribute('aria-busy', 'true');
     const status = el('p', { className: 'busy', text: message });
     target.replaceChildren(status);
+    announce(message);
     const started = Date.now();
     const tick = setInterval(() => {
       status.textContent = `${message} ${Math.round((Date.now() - started) / 1000)} s`;
@@ -208,20 +218,30 @@
     if (job.status === 'succeeded') nodes.push(el('p', { className: 'hint', text: 'Sync finished. Load insights to see the results.' }));
     if (!done) nodes.push(el('p', { className: 'busy', text: 'Checking again every 2 seconds.' }));
     out.sync.replaceChildren(...nodes);
+    if (job.status !== lastJobStatus) announce(`Sync ${humanize(job.status)}.`);
+    lastJobStatus = job.status;
     return done;
   }
 
-  async function poll(id) {
+  async function poll(id, token) {
+    if (token !== pollToken) return;
+    const button = $('sync-btn');
+    button.disabled = true;
     try {
       const job = await api(`/sync-jobs/${encodeURIComponent(id)}`);
-      if (!renderJob(job)) pollTimer = setTimeout(() => poll(id), POLL_MS);
+      if (token !== pollToken) return;
+      if (!renderJob(job)) pollTimer = setTimeout(() => poll(id, token), POLL_MS);
     } catch (err) {
-      renderProblem(out.sync, err);
+      if (token === pollToken) renderProblem(out.sync, err);
+    } finally {
+      if (token === pollToken) button.disabled = false;
     }
   }
 
   async function startSync() {
+    const token = ++pollToken;
     clearTimeout(pollTimer);
+    lastJobStatus = null;
     const button = $('sync-btn');
     button.disabled = true;
     try {
@@ -233,14 +253,16 @@
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(body),
       });
-      if (!renderJob(job)) pollTimer = setTimeout(() => poll(job.id), POLL_MS);
+      if (token !== pollToken) return;
+      if (!renderJob(job)) pollTimer = setTimeout(() => poll(job.id, token), POLL_MS);
     } catch (err) {
+      if (token !== pollToken) return;
       const type = err instanceof Problem ? String(err.problem.type || '') : '';
       renderProblem(out.sync, err, type.endsWith('github-token-missing')
         ? 'Sync is turned off on this server. Insights and narratives still work for repositories that are already synced.'
         : null);
     } finally {
-      button.disabled = false;
+      if (token === pollToken) button.disabled = false;
     }
   }
 
@@ -365,6 +387,7 @@
           data.buckets.length ? renderTable(data) : el('p', { className: 'muted', text: 'No buckets in this window.' }),
           el('h3', { text: `Signals (${data.signals.length})` }),
           renderSignals(data.signals));
+        announce(`Insights loaded: ${data.buckets.length} buckets, ${data.signals.length} signals.`);
       } catch (err) {
         renderProblem(out.insights, err);
       }
@@ -379,12 +402,14 @@
     fill.style.width = pct(h.confidence); // CSSOM, allowed under style-src 'self'
     const marker = el('span', { className: 'conf-model', title: `Model said ${h.model_confidence.toFixed(2)}` });
     marker.style.left = pct(h.model_confidence);
-    const changed = h.confidence !== h.model_confidence;
+    const direction = h.confidence < h.model_confidence ? 'down' : 'up';
     return el('div', { className: 'conf' },
       el('div', { className: 'conf-track', 'aria-hidden': 'true' }, fill, marker),
       el('p', { className: 'conf-label' },
         `Confidence ${h.confidence.toFixed(2)}`,
-        changed ? `, calibrated down from the model's ${h.model_confidence.toFixed(2)}` : ', as stated by the model'),
+        h.confidence === h.model_confidence
+          ? ', as stated by the model'
+          : `, calibrated ${direction} from the model's ${h.model_confidence.toFixed(2)}`),
       h.adjustments.length
         ? el('ul', { className: 'chips', 'aria-label': 'Calibration adjustments' }, h.adjustments.map((a) => el('li', { text: humanize(a) })))
         : null);
@@ -418,7 +443,7 @@
       h.alternative_explanations.length
         ? el('div', {}, el('h5', { text: 'Other explanations' }), el('ul', {}, h.alternative_explanations.map((a) => el('li', { text: a }))))
         : null,
-      el('p', { className: 'check' }, el('strong', { text: 'Check: ' }), h.suggested_check));
+      el('p', { className: 'suggested-check' }, el('strong', { text: 'Check: ' }), h.suggested_check));
   }
 
   function renderGrounding(g) {
@@ -481,6 +506,7 @@
     await busy([$('narrative-btn'), $('regenerate-btn')], out.narrative, message, async () => {
       try {
         renderNarrative(await api(path));
+        announce('Narrative ready.');
       } catch (err) {
         renderProblem(out.narrative, err);
       }

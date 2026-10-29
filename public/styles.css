@@ -204,7 +204,7 @@ tbody th { font-weight: 500; white-space: nowrap; }
   border: 1px solid var(--rule); color: var(--ink-2);
 }
 .evidence td:nth-child(5) { min-width: 16rem; white-space: normal; }
-.check { margin-top: 1rem; max-width: 70ch; }
+.suggested-check { margin-top: 1rem; max-width: 70ch; }
 .audit { display: grid; gap: 1.5rem 3rem; margin-top: 2rem; padding-top: 1.25rem; border-top: 2px solid var(--rule-strong); }
 @media (min-width: 60rem) { .audit { grid-template-columns: 1fr 1.6fr; } }
 .grounding ul { padding-left: 1.1rem; font-size: .9rem; }
