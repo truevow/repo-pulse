@@ -26,6 +26,8 @@ export interface GroundingResult {
   }>;
   unverifiedNumbers: number[];
   droppedHypotheses: number;
+  /** Original index of each hypothesis in `output.hypotheses`, in order. */
+  survivingIndices: number[];
 }
 
 /**
@@ -42,6 +44,7 @@ export function groundOutput(
   const rejected: GroundingResult['rejected'] = [];
   const verified: Array<{ value: number; unit: FactUnit }> = [];
   const hypotheses: Hypothesis[] = [];
+  const survivingIndices: number[] = [];
 
   output.hypotheses.forEach((h, hypothesisIndex) => {
     const kept: Evidence[] = [];
@@ -72,6 +75,7 @@ export function groundOutput(
       verified.push({ value: fact.value, unit: fact.unit });
     }
     if (kept.length > 0) {
+      survivingIndices.push(hypothesisIndex);
       hypotheses.push({
         ...h,
         evidence: kept,
@@ -108,6 +112,7 @@ export function groundOutput(
     rejected,
     unverifiedNumbers: unverified,
     droppedHypotheses,
+    survivingIndices,
   };
 }
 

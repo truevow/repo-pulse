@@ -185,6 +185,20 @@ describe('groundOutput', () => {
     expect(output).toEqual(snapshot);
   });
 
+  it('maps each surviving hypothesis to its original index', () => {
+    const good = ev({ value: 12 });
+    const bogus = hyp([ev({ signal_id: 'ghost' })]);
+    const output = out([bogus, hyp([good]), bogus, hyp([good])]);
+
+    const r = groundOutput(output, seeded(), SIGNALS);
+
+    expect(r.output.hypotheses).toHaveLength(2);
+    expect(r.survivingIndices).toEqual([1, 3]);
+    expect(groundOutput(out([]), seeded(), SIGNALS).survivingIndices).toEqual(
+      [],
+    );
+  });
+
   it('status ok with no hypotheses at all', () => {
     expect(groundOutput(out([]), seeded(), SIGNALS).status).toBe('ok');
   });
