@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Repo Pulse</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="masthead">
+    <p class="wordmark">Repo Pulse</p>
+    <p class="lede">Sync a GitHub repository, see how its pull requests, reviews and issues moved week by week, and ask for an evidence-backed reading of what changed.</p>
+  </header>
+
+  <main>
+    <section class="step" aria-labelledby="repo-heading">
+      <h1 id="repo-heading" class="visually-hidden">Repository</h1>
+      <form id="repo-form" class="repo-form" novalidate>
+        <label for="repo" class="repo-label">Repository (owner/name)</label>
+        <div class="repo-row">
+          <input id="repo" name="repo" class="repo-input" value="anomalyco/opencode"
+                 autocomplete="off" spellcheck="false" autocapitalize="off" required>
+          <button type="submit" id="sync-btn" class="btn">Sync from GitHub</button>
+        </div>
+        <button type="button" id="demo-repo" class="link-btn">Use seeded demo repo</button>
+      </form>
+      <div id="sync-out" class="out" aria-live="polite"></div>
+    </section>
+
+    <section class="step" aria-labelledby="insights-heading">
+      <h2 id="insights-heading">Insights</h2>
+      <form id="window-form" class="window-form" novalidate>
+        <label>From <input type="date" id="from" name="from"></label>
+        <label>To <input type="date" id="to" name="to"></label>
+        <label>Bucket
+          <select id="bucket" name="bucket">
+            <option value="week" selected>Week</option>
+            <option value="day">Day</option>
+          </select>
+        </label>
+        <label class="check"><input type="checkbox" id="include-bots" name="includeBots"> Include bots</label>
+        <button type="submit" id="insights-btn" class="btn">Load insights</button>
+      </form>
+      <p class="hint">Leave the dates empty to use the server's default window. The same window applies to sync and narrative.</p>
+      <div id="insights-out" class="out" aria-live="polite"></div>
+    </section>
+
+    <section class="step" aria-labelledby="narrative-heading">
+      <h2 id="narrative-heading">Narrative</h2>
+      <div class="actions">
+        <button type="button" id="narrative-btn" class="btn">Generate narrative</button>
+        <button type="button" id="regenerate-btn" class="btn btn-quiet">Regenerate</button>
+      </div>
+      <p class="hint">Uses the cached narrative when one exists. Regenerate calls the model again (15 to 40 seconds).</p>
+      <div id="narrative-out" class="out" aria-live="polite"></div>
+    </section>
+  </main>
+</body>
+</html>

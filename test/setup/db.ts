@@ -1,4 +1,5 @@
-import type { INestApplication, InjectionToken } from '@nestjs/common';
+import type { InjectionToken } from '@nestjs/common';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import { AppModule } from '../../src/app.module';
 import { configureApp } from '../../src/bootstrap';
@@ -25,13 +26,13 @@ export async function resetDatabase(prisma: PrismaService): Promise<void> {
 
 export async function createTestApp(
   overrides: Array<{ provide: InjectionToken; useValue: unknown }> = [],
-): Promise<INestApplication> {
+): Promise<NestExpressApplication> {
   let builder = Test.createTestingModule({ imports: [AppModule] });
   for (const o of overrides) {
     builder = builder.overrideProvider(o.provide).useValue(o.useValue);
   }
   const moduleRef = await builder.compile();
-  const app = moduleRef.createNestApplication();
+  const app = moduleRef.createNestApplication<NestExpressApplication>();
   configureApp(app);
   await app.init();
   return app;
