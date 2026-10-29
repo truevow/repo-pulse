@@ -1,12 +1,15 @@
 import type { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
+import { Logger } from 'nestjs-pino';
+import { ProblemDetailsFilter } from './common/problem-details.filter';
 import { ENV, type Env } from './config/env';
 
 /** HTTP-level setup shared by main.ts and the e2e tests. */
 export function configureApp(app: INestApplication): void {
   const env = app.get<Env>(ENV);
   app.use(helmet());
+  app.useGlobalFilters(new ProblemDetailsFilter(app.get(Logger)));
   app.setGlobalPrefix('api/v1', { exclude: ['docs'] });
   if (env.CORS_ORIGIN) {
     app.enableCors({ origin: env.CORS_ORIGIN.split(',').map((o) => o.trim()) });

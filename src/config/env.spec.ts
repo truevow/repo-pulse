@@ -18,4 +18,16 @@ describe('loadEnv', () => {
       /sk-ant-secret/,
     );
   });
+
+  it('treats empty optional strings as unset', () => {
+    const env = loadEnv({
+      DATABASE_URL: 'postgresql://u:p@localhost:5432/db',
+      GITHUB_TOKEN: '',
+      ANTHROPIC_API_KEY: '',
+      CORS_ORIGIN: '',
+    });
+    expect(env.GITHUB_TOKEN).toBeUndefined();
+    expect(env.ANTHROPIC_API_KEY).toBeUndefined();
+    expect(env.CORS_ORIGIN).toBeUndefined();
+  });
 });

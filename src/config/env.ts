@@ -1,18 +1,24 @@
 import { z } from 'zod';
 
+/** Treats an empty string (e.g. `GITHUB_TOKEN=`) as unset. */
+const optionalString = z.preprocess(
+  (v) => (v === '' ? undefined : v),
+  z.string().min(1).optional(),
+);
+
 export const EnvSchema = z.object({
   NODE_ENV: z
     .enum(['development', 'test', 'production'])
     .default('development'),
   PORT: z.coerce.number().int().default(3000),
   DATABASE_URL: z.string().min(1),
-  GITHUB_TOKEN: z.string().min(1).optional(),
-  ANTHROPIC_API_KEY: z.string().min(1).optional(),
+  GITHUB_TOKEN: optionalString,
+  ANTHROPIC_API_KEY: optionalString,
   ANTHROPIC_MODEL: z.string().default('claude-opus-5-5'),
   ANTHROPIC_EFFORT: z.enum(['low', 'medium', 'high']).default('medium'),
   SYNC_MAX_WEEKS: z.coerce.number().int().min(1).default(26),
   NARRATIVE_RATE_LIMIT_PER_MIN: z.coerce.number().int().min(1).default(10),
-  CORS_ORIGIN: z.string().optional(),
+  CORS_ORIGIN: optionalString,
   LOG_LEVEL: z.string().default('info'),
 });
 
