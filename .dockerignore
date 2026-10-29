@@ -1,0 +1,13 @@
+node_modules
+dist
+.git
+.github
+.env
+.env.*
+!.env.example
+coverage
+eval/reports
+.superpowers
+docs
+*.pdf
+*.tsbuildinfo

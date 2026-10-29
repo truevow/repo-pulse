@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: repo_pulse
+          POSTGRES_PASSWORD: repo_pulse
+          POSTGRES_DB: repo_pulse
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U repo_pulse"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      DATABASE_URL_TEST: postgresql://repo_pulse:repo_pulse@localhost:5432/repo_pulse_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Create test database
+        run: PGPASSWORD=repo_pulse psql -h localhost -U repo_pulse -d repo_pulse -c 'CREATE DATABASE repo_pulse_test'
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npx prisma generate
+      - run: npm test
+      - run: npm run test:e2e
+      - run: npm run build
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
+      - name: Build Docker image
+        run: docker build -t repo-pulse:ci .
