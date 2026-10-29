@@ -197,6 +197,27 @@ describe('Sync (e2e)', () => {
     expect(await prisma.pullRequest.count()).toBe(3);
   });
 
+  it('fetches commits up to the old coverage start for a disjoint earlier backfill', async () => {
+    await sync(WINDOW).expect(202);
+    await runner.whenIdle();
+
+    // Ends before the synced range starts: coverage will be extended across
+    // the gap [earlier.to, WINDOW.from), so its commits must be fetched too.
+    const earlier = { from: '2026-07-06', to: '2026-08-03' };
+    const backfill = await sync(earlier).expect(202);
+    expect(backfill.body.mode).toBe('backfill');
+    await runner.whenIdle();
+    expect((await getJob(backfill.body.id)).status).toBe('succeeded');
+
+    expect(fake.callsTo(COMMITS_QUERY).at(-1)).toMatchObject({
+      since: iso(earlier.from),
+      until: iso(WINDOW.from),
+    });
+    const repo = await repository();
+    expect(repo.coveredFrom).toEqual(new Date(iso(earlier.from)));
+    expect(repo.coveredTo).toEqual(new Date(iso(WINDOW.to)));
+  });
+
   it('returns the running job with 200 when a sync is already in progress', async () => {
     const release = fake.hold(PULL_REQUESTS_QUERY);
     let first: request.Response;

@@ -41,9 +41,9 @@ interface JobContext {
   owner: string;
   name: string;
   since: Date;
-  until: Date;
   /** Commits are filtered by committed date, not update time; see ingest(). */
   commitsSince: Date;
+  commitsUntil: Date;
 }
 
 /** Per-page transactions upsert up to 50 PRs with 30 reviews each. */
@@ -89,6 +89,7 @@ export class SyncJobExecutor {
 
   private async ingest(job: SyncJob, repo: Repository): Promise<void> {
     const incremental = job.mode === 'incremental';
+    const backfill = job.mode === 'backfill';
     const ctx: JobContext = {
       jobId: job.id,
       repositoryId: repo.id,
@@ -97,12 +98,17 @@ export class SyncJobExecutor {
       since: incremental
         ? (repo.lastSyncedAt ?? job.requestedFrom)
         : job.requestedFrom,
-      until: job.requestedTo,
       // The previous job fetched commits only up to its requestedTo, which is
       // before its startedAt (lastSyncedAt), so resume from the coverage end.
       commitsSince: incremental
         ? (repo.coveredTo ?? repo.lastSyncedAt ?? job.requestedFrom)
         : job.requestedFrom,
+      // succeed() extends coverage to the old coveredTo, so a backfill that
+      // ends before the old coverage starts must also fetch the gap up to it.
+      commitsUntil:
+        backfill && repo.coveredFrom && repo.coveredFrom > job.requestedTo
+          ? repo.coveredFrom
+          : job.requestedTo,
     };
     if (repo.hasPullRequests) await this.syncPullRequests(ctx);
     if (repo.hasIssuesEnabled) await this.syncIssues(ctx);
@@ -197,7 +203,7 @@ export class SyncJobExecutor {
         owner: ctx.owner,
         name: ctx.name,
         since: ctx.commitsSince.toISOString(),
-        until: ctx.until.toISOString(),
+        until: ctx.commitsUntil.toISOString(),
         cursor,
       });
       if (!result.repository) throw lost();

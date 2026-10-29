@@ -11,7 +11,11 @@ import type { InsightsResponse } from '../signals/insights.types';
 import { MetricsRepository } from '../signals/metrics.repository';
 import type { ToolContext } from './agent/tool-context';
 import { buildTools } from './agent/tools';
-import { narrativeCacheKey, signalsFingerprint } from './cache-key';
+import {
+  dataFingerprint,
+  narrativeCacheKey,
+  signalsFingerprint,
+} from './cache-key';
 import { calibrate } from './calibration';
 import { costUsd } from './cost';
 import { FactLedger, seedLedgerFromInsights } from './fact-ledger';
@@ -137,6 +141,8 @@ export class NarrativeService {
       bucket: insights.bucket,
       includeBots: insights.includeBots,
       signalsFingerprint: signalsFingerprint(insights.signals),
+      dataFingerprint: dataFingerprint(insights),
+      lastSyncedAt: insights.coverage.lastSyncedAt,
       promptVersion: PROMPT_VERSION,
       model: this.env.ANTHROPIC_MODEL,
       effort: this.env.ANTHROPIC_EFFORT,

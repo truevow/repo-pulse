@@ -1,6 +1,8 @@
 import { createHash } from 'node:crypto';
 import type { BucketSize } from '../signals/buckets';
+import type { InsightsResponse } from '../signals/insights.types';
 import type { Signal } from '../signals/signal.types';
+import { buildUserMessage } from './prompts/user-message';
 
 export interface CacheKeyParts {
   owner: string;
@@ -11,6 +13,10 @@ export interface CacheKeyParts {
   bucket: BucketSize;
   includeBots: boolean;
   signalsFingerprint: string;
+  /** Digest of the user message: every number and label the model is shown. */
+  dataFingerprint: string;
+  /** Last sync start: tool-visible data (examples, activity) may change with it. */
+  lastSyncedAt: string | null;
   promptVersion: string;
   model: string;
   effort: string;
@@ -31,6 +37,8 @@ export function narrativeCacheKey(p: CacheKeyParts): string {
       p.bucket,
       p.includeBots,
       p.signalsFingerprint,
+      p.dataFingerprint,
+      p.lastSyncedAt,
       p.promptVersion,
       p.model,
       p.effort,
@@ -46,4 +54,9 @@ export function signalsFingerprint(signals: Signal[]): string {
       .sort()
       .join(','),
   );
+}
+
+/** Digest of everything the model is shown up front (the user message). */
+export function dataFingerprint(insights: InsightsResponse): string {
+  return sha256(buildUserMessage(insights));
 }

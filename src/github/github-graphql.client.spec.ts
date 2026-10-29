@@ -91,6 +91,49 @@ describe('GitHubGraphqlClient', () => {
     expect(sleep.mock.calls.map((c) => c[0])).toEqual([500]);
   });
 
+  it('sleeps until the known reset on GraphQL RATE_LIMITED, once, capped at 1 h', async () => {
+    const resetAt = new Date(NOW.getTime() + 90_000).toISOString();
+    const limited = (reset: string) =>
+      res({
+        data: { rateLimit: rl(0, reset) },
+        errors: [{ type: 'RATE_LIMITED', message: 'slow down' }],
+      });
+    const { client, sleep } = setup([
+      limited(resetAt),
+      res({ data: { rateLimit: rl(4000) } }),
+    ]);
+    await client.query('q', {});
+    // resetAt + 1 s, and no second wait for the same window before the retry.
+    expect(sleep.mock.calls.map((c) => c[0])).toEqual([91_000]);
+
+    const far = setup([
+      limited(new Date(NOW.getTime() + 7_200_000).toISOString()),
+      res({ data: { rateLimit: rl(4000) } }),
+    ]);
+    await far.client.query('q', {});
+    expect(far.sleep.mock.calls.map((c) => c[0])).toEqual([3_600_000]);
+  });
+
+  it('sleeps until x-ratelimit-reset on a 403 or 429 with no points left', async () => {
+    const epoch = (ms: number) => String((NOW.getTime() + ms) / 1000);
+    const exhausted = (status: number, resetInMs: number) =>
+      new Response('{}', {
+        status,
+        headers: {
+          'x-ratelimit-remaining': '0',
+          'x-ratelimit-reset': epoch(resetInMs),
+        },
+      });
+    const { client, fetchImpl, sleep } = setup([
+      exhausted(403, 120_000),
+      exhausted(429, 30_000),
+      res({ data: { rateLimit: rl(4000) } }),
+    ]);
+    await client.query('q', {});
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
+    expect(sleep.mock.calls.map((c) => c[0])).toEqual([121_000, 31_000]);
+  });
+
   it('sleeps until resetAt when remaining is below the reserve before the next query', async () => {
     const resetAt = new Date(NOW.getTime() + 90_000).toISOString();
     const { client, sleep } = setup([

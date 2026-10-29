@@ -1,5 +1,7 @@
 import type { Signal } from '../signals/signal.types';
+import { INSIGHTS_FIXTURE } from '../../test/fixtures/insights.fixture';
 import {
+  dataFingerprint,
   narrativeCacheKey,
   signalsFingerprint,
   type CacheKeyParts,
@@ -13,6 +15,8 @@ const BASE: CacheKeyParts = {
   bucket: 'week',
   includeBots: false,
   signalsFingerprint: 'abc',
+  dataFingerprint: 'data-1',
+  lastSyncedAt: '2026-10-19T00:00:00.000Z',
   promptVersion: 'v1',
   model: 'claude-opus-5-5',
   effort: 'medium',
@@ -26,6 +30,8 @@ const VARIANTS: { [K in keyof CacheKeyParts]: CacheKeyParts[K] } = {
   bucket: 'day',
   includeBots: true,
   signalsFingerprint: 'def',
+  dataFingerprint: 'data-2',
+  lastSyncedAt: null,
   promptVersion: 'v2',
   model: 'claude-sonnet-5-5',
   effort: 'high',
@@ -72,5 +78,37 @@ describe('signalsFingerprint', () => {
 
   it('is a sha256 hex digest of the sorted id:observed list', () => {
     expect(signalsFingerprint([])).toMatch(/^[0-9a-f]{64}$/);
+  });
+});
+
+describe('dataFingerprint', () => {
+  it('is stable for equal insights', () => {
+    expect(dataFingerprint(structuredClone(INSIGHTS_FIXTURE))).toBe(
+      dataFingerprint(INSIGHTS_FIXTURE),
+    );
+  });
+
+  it('changes when any shown number changes, even with the same signals', () => {
+    const base = dataFingerprint(INSIGHTS_FIXTURE);
+    const bucket = INSIGHTS_FIXTURE.buckets[1];
+    const changedCell = {
+      ...INSIGHTS_FIXTURE,
+      buckets: [
+        INSIGHTS_FIXTURE.buckets[0],
+        { ...bucket, metrics: { ...bucket.metrics, commits: 31 } },
+      ],
+    };
+    const changedBoard = {
+      ...INSIGHTS_FIXTURE,
+      leaderboards: {
+        ...INSIGHTS_FIXTURE.leaderboards,
+        mergers: [{ login: 'carol', prsMerged: 12 }],
+      },
+    };
+    expect(dataFingerprint(changedCell)).not.toBe(base);
+    expect(dataFingerprint(changedBoard)).not.toBe(base);
+    expect(signalsFingerprint(changedCell.signals)).toBe(
+      signalsFingerprint(INSIGHTS_FIXTURE.signals),
+    );
   });
 });

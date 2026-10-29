@@ -171,6 +171,33 @@ describe('NarrativeService', () => {
     expect(JSON.stringify(fields)).not.toContain(stored.narrative);
   });
 
+  it('looks up a different cache key after a re-sync or a changed number', async () => {
+    const keyFor = async (insights: InsightsResponse) => {
+      const { service, prisma } = setup(insights, {
+        stored: await storedResponse(),
+      });
+      await service.getNarrative('acme', 'widgets', Q);
+      const [args] = prisma.narrative.findUnique.mock.calls[0] as unknown as [
+        { where: { cacheKey: string } },
+      ];
+      return args.where.cacheKey;
+    };
+    const base = await keyFor(INSIGHTS_FIXTURE);
+    const resynced = await keyFor({
+      ...INSIGHTS_FIXTURE,
+      coverage: {
+        ...INSIGHTS_FIXTURE.coverage,
+        lastSyncedAt: '2026-09-15T00:00:00.000Z',
+      },
+    });
+    const [w1, w2] = INSIGHTS_FIXTURE.buckets;
+    const recounted = await keyFor({
+      ...INSIGHTS_FIXTURE,
+      buckets: [w1, { ...w2, metrics: { ...w2.metrics, commits: 31 } }],
+    });
+    expect(new Set([base, resynced, recounted]).size).toBe(3);
+  });
+
   it('does not let refresh=true join an in-flight cache lookup', async () => {
     const stored = await storedResponse();
     const { service, runner } = setup(INSIGHTS_FIXTURE, {
