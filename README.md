@@ -137,6 +137,12 @@ curl -s http://localhost:3000/api/v1/repos/anomalyco/opencode/narrative
   secondary limit with points left, and other transient failures, back off
   exponentially with jitter.
   At most 5 attempts are made per query.
+- **Partial responses.** GitHub sometimes cannot resolve one node of a page
+  and answers 200 with that node `null` plus an `INTERNAL` error naming its
+  path (anomalyco/opencode has one such issue). The client drops the failed
+  node, logs its type and path, and keeps the page; an `INTERNAL` error that
+  is not a list node is retried like any transient failure. Query validation
+  errors stay fatal (`bad_query`).
 - **Repeat requests.** A second POST while a job is queued or running returns
   that job with 200, whatever window it asks for.
 - **Later syncs.** A later sync inside the covered range is incremental: it

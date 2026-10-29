@@ -27,6 +27,50 @@ export interface GitHubGraphqlClientOptions {
 interface GraphqlError {
   type?: string;
   message?: string;
+  /** Field path of the failed node, e.g. ["repository","issues","nodes",70]. */
+  path?: (string | number)[];
+  /** Present on query validation errors, absent on execution failures. */
+  locations?: unknown[];
+}
+
+/**
+ * A server-side failure while resolving part of the query. GitHub reports
+ * these as `INTERNAL`, or untyped without `locations` (timeouts). Validation
+ * errors carry `locations` and stay fatal.
+ */
+function isServerFailure(e: GraphqlError): boolean {
+  return (
+    e.type === 'INTERNAL' || (e.type === undefined && e.locations === undefined)
+  );
+}
+
+/**
+ * GraphQL partial success: GitHub nulls a list node it could not resolve and
+ * reports the path. Removes every such node from `data` in place and returns
+ * true when each error pointed at one; false means the failure is elsewhere.
+ */
+function pruneFailedNodes(
+  data: Record<string, unknown>,
+  errors: GraphqlError[],
+): boolean {
+  const removals = new Map<unknown[], Set<number>>();
+  for (const e of errors) {
+    const path = e.path ?? [];
+    const index = path.at(-1);
+    if (typeof index !== 'number') return false;
+    let node: unknown = data;
+    for (const key of path.slice(0, -1)) {
+      if (node === null || typeof node !== 'object') return false;
+      node = (node as Record<string | number, unknown>)[key];
+    }
+    if (!Array.isArray(node) || index < 0 || index >= node.length) return false;
+    if (!removals.has(node)) removals.set(node, new Set());
+    removals.get(node)!.add(index);
+  }
+  for (const [list, indexes] of removals) {
+    for (const i of [...indexes].sort((a, b) => b - a)) list.splice(i, 1);
+  }
+  return true;
 }
 
 interface GraphqlBody {
@@ -223,6 +267,17 @@ export class GitHubGraphqlClient implements GitHubClient {
     }
     if (errors.every((e) => e.type === 'NOT_FOUND')) {
       throw new GitHubError('not_found', 'GitHub resource not found', status);
+    }
+    if (errors.every(isServerFailure)) {
+      const data = body.data;
+      if (data && pruneFailedNodes(data, errors)) {
+        this.logger?.warn(
+          { dropped: errors.map((e) => ({ type: e.type, path: e.path })) },
+          'github graphql partial response: dropped nodes GitHub failed to resolve',
+        );
+        return { value: data as T };
+      }
+      return new Retryable('GitHub internal error', status);
     }
     const message = errors
       .map((e) => e.message ?? 'unknown error')

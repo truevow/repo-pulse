@@ -227,6 +227,122 @@ describe('GitHubGraphqlClient', () => {
     expect((err as GitHubError).message).toBe('first; second');
   });
 
+  it('drops a list node GitHub failed to resolve (INTERNAL) and keeps the page', async () => {
+    const logger = { debug: jest.fn(), warn: jest.fn() };
+    const { client, fetchImpl } = setup(
+      [
+        res({
+          data: {
+            repository: { issues: { nodes: [{ id: 'a' }, null, { id: 'c' }] } },
+            rateLimit: rl(4000),
+          },
+          errors: [
+            {
+              type: 'INTERNAL',
+              path: ['repository', 'issues', 'nodes', 1],
+              locations: [{ line: 6, column: 7 }],
+              message: 'Something went wrong while executing your query.',
+            },
+          ],
+        }),
+      ],
+      { logger: logger as unknown as import('nestjs-pino').PinoLogger },
+    );
+    const out = await client.query<{
+      repository: { issues: { nodes: { id: string }[] } };
+    }>('q', {});
+    expect(out.repository.issues.nodes).toEqual([{ id: 'a' }, { id: 'c' }]);
+    expect(client.lastRateLimit).toEqual(rl(4000));
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(logger.warn).toHaveBeenCalledTimes(1);
+    expect(JSON.stringify(logger.warn.mock.calls[0])).not.toContain(
+      'Something went wrong',
+    );
+  });
+
+  it('drops several failed nodes across pages of nested lists in one response', async () => {
+    const { client } = setup([
+      res({
+        data: {
+          repository: {
+            pullRequests: {
+              nodes: [
+                { id: 'p1', reviews: { nodes: [{ id: 'r1' }, null] } },
+                null,
+                { id: 'p3', reviews: { nodes: [] } },
+              ],
+            },
+          },
+        },
+        errors: [
+          {
+            type: 'INTERNAL',
+            path: ['repository', 'pullRequests', 'nodes', 1],
+          },
+          {
+            message: 'timedout',
+            path: [
+              'repository',
+              'pullRequests',
+              'nodes',
+              0,
+              'reviews',
+              'nodes',
+              1,
+            ],
+          },
+        ],
+      }),
+    ]);
+    const out = await client.query<{
+      repository: {
+        pullRequests: {
+          nodes: { id: string; reviews: { nodes: unknown[] } }[];
+        };
+      };
+    }>('q', {});
+    expect(out.repository.pullRequests.nodes.map((n) => n.id)).toEqual([
+      'p1',
+      'p3',
+    ]);
+    expect(out.repository.pullRequests.nodes[0].reviews.nodes).toEqual([
+      { id: 'r1' },
+    ]);
+  });
+
+  it('retries an INTERNAL error that is not a list node, then gives up as unavailable', async () => {
+    const internal = () =>
+      res({
+        data: { repository: null },
+        errors: [{ type: 'INTERNAL', path: ['repository'], message: 'oops' }],
+      });
+    const { client, fetchImpl } = setup([internal(), internal()], {
+      maxRetries: 2,
+    });
+    await expect(client.query('q', {})).rejects.toMatchObject({
+      kind: 'unavailable',
+      status: 200,
+    });
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps validation errors (with locations) fatal as bad_query', async () => {
+    const { client, fetchImpl } = setup([
+      res({
+        errors: [
+          {
+            message: "Field 'nope' doesn't exist on type 'Issue'",
+            locations: [{ line: 3, column: 5 }],
+          },
+        ],
+      }),
+    ]);
+    await expect(client.query('q', {})).rejects.toMatchObject({
+      kind: 'bad_query',
+    });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
   it('throws unavailable after maxRetries failed attempts', async () => {
     const { client, fetchImpl, sleep } = setup(
       Array.from({ length: 3 }, () => res({}, 503)),
