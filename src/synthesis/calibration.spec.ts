@@ -85,6 +85,11 @@ describe('calibrate', () => {
     expect(moderate.confidence).toBe(0.6);
     expect(moderate.adjustments).toEqual(['moderate_signal_only']);
 
+    // Signal ids that resolve to nothing count as no signal cited.
+    const ghosts = calibrate(hyp(0.8, [ev('ghost1'), ev('ghost2')]), ctx());
+    expect(ghosts.confidence).toBe(0.5);
+    expect(ghosts.adjustments).toEqual(['no_signal_cited']);
+
     const mixed = calibrate(hyp(0.8, [ev('mod1'), ev('high')]), ctx());
     expect(mixed.confidence).toBe(0.8);
     expect(mixed.adjustments).toEqual([]);

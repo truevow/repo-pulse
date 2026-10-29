@@ -69,6 +69,28 @@ describe('groundOutput', () => {
     ]);
   });
 
+  it('accepts count evidence at exactly 0.5 away and rejects 0.51', () => {
+    const ok = groundOutput(
+      out([hyp([ev({ value: 12.5 })])]),
+      seeded(),
+      SIGNALS,
+    );
+    expect(ok.status).toBe('ok');
+    const bad = groundOutput(
+      out([hyp([ev({ value: 12.51 })])]),
+      seeded(),
+      SIGNALS,
+    );
+    expect(bad.rejected).toEqual([
+      {
+        hypothesisIndex: 0,
+        evidence: ev({ value: 12.51 }),
+        reason: 'value_mismatch',
+        expected: 12,
+      },
+    ]);
+  });
+
   it('rejects ratio evidence outside 0.01', () => {
     const bad = ev({
       signal_id: CONCENTRATION_SIGNAL.id,
@@ -193,6 +215,18 @@ describe('groundOutput', () => {
     expect(r.unverifiedNumbers).toEqual([40, 7]);
   });
 
+  it('checks prose numerals against the ledger fact, not the drifted evidence value', () => {
+    // Evidence 12.4 is accepted for fact 12, but prose "12.9" is 0.9 from the fact.
+    const output = out(
+      [hyp([ev({ value: 12.4 })])],
+      'h',
+      'Merges hit 12.4, or 12.9 by another count',
+    );
+    expect(groundOutput(output, seeded(), SIGNALS).unverifiedNumbers).toEqual([
+      12.9,
+    ]);
+  });
+
   it('reports a percentage once, as written, when neither form matches', () => {
     const output = out(
       [hyp([ev({ metric: 'review_concentration_top1', value: 0.75 })])],
@@ -218,6 +252,11 @@ describe('extractNumbers', () => {
     expect(
       extractNumbers('1st week: time_to_merge_p50_h fell -3 in 2026, 12 vs 8'),
     ).toEqual([-3, 2026, 12, 8]);
+  });
+
+  it('reads leading-dot decimals and digits after an ellipsis', () => {
+    expect(extractNumbers('a .85 ratio')).toEqual([0.85]);
+    expect(extractNumbers('fell...40 PRs')).toEqual([40]);
   });
 
   it('skips ISO timestamps', () => {

@@ -40,7 +40,8 @@ const RULES: Rule[] = [
   },
   {
     name: 'no_signal_cited',
-    applies: (h) => h.evidence.every((e) => e.signal_id === null),
+    // No cited id resolves to a known signal.
+    applies: (h, ctx) => citedSignals(h, ctx).length === 0,
     adjust: cap(0.5),
   },
   {

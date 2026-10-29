@@ -1,5 +1,8 @@
 import { FactLedger, seedLedgerFromInsights } from './fact-ledger';
-import { INSIGHTS_FIXTURE } from '../../test/fixtures/insights.fixture';
+import {
+  INSIGHTS_FIXTURE,
+  LEVEL_SHIFT_SIGNAL,
+} from '../../test/fixtures/insights.fixture';
 
 describe('FactLedger', () => {
   it('keys null and undefined bucket/entity the same and lower-cases entities', () => {
@@ -92,5 +95,23 @@ describe('seedLedgerFromInsights', () => {
 
     // 7 bucket cells + 6 leaderboard cells + 2 baselines + 1 example + 1 observed.
     expect(ledger.size).toBe(17);
+  });
+
+  it('always records a level shift under .observed, and the cell only when absent or equal', () => {
+    const ledger = new FactLedger();
+    seedLedgerFromInsights(ledger, {
+      ...INSIGHTS_FIXTURE,
+      buckets: [],
+      leaderboards: { contributors: [], reviewers: [], mergers: [] },
+      signals: [{ ...LEVEL_SHIFT_SIGNAL, observed: 12 }],
+    });
+    const key = { metric: 'prs_merged', bucket: '2026-09-07' };
+    expect(ledger.lookup(key)?.value).toBe(12);
+    expect(
+      ledger.lookup({ metric: 'prs_merged.observed', bucket: '2026-09-07' })
+        ?.value,
+    ).toBe(12);
+    // cell + .observed + .baseline_median
+    expect(ledger.size).toBe(3);
   });
 });

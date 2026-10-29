@@ -91,12 +91,13 @@ export function seedLedgerFromInsights(
   for (const s of insights.signals) {
     const unit = METRIC_UNITS[s.metric];
     const cell = { metric: s.metric, bucket: s.bucket };
-    // Usually the bucket cell itself; a level shift reports the recent median
-    // instead, which must not overwrite the real bucket value.
+    // The cell is written only when absent or equal: a level shift's observed
+    // is the recent median and must not overwrite the real bucket value.
     const existing = ledger.lookup(cell);
     if (existing === undefined || existing.value === s.observed) {
       ledger.record(cell, s.observed, unit);
-    } else {
+    }
+    if (s.detector === 'level_shift') {
       ledger.record(
         { metric: `${s.metric}.observed`, bucket: s.bucket },
         s.observed,

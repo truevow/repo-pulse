@@ -68,7 +68,8 @@ export function groundOutput(
         continue;
       }
       kept.push({ ...evidence });
-      verified.push({ value: evidence.value, unit: fact.unit });
+      // Prose is checked against the fact itself, so drift never stacks.
+      verified.push({ value: fact.value, unit: fact.unit });
     }
     if (kept.length > 0) {
       hypotheses.push({
@@ -129,8 +130,10 @@ function verifies(n: number, v: number, unit: FactUnit): boolean {
 // Dates, ISO timestamps and ISO week labels are not quantities.
 const DATE_LIKE =
   /\d{4}-(?:W\d{2}|\d{2}-\d{2}(?:T[\d:.]+(?:Z|[+-]\d{2}:?\d{2})?)?)/g;
-// Not preceded by a word char, `#` (PR refs) or `.`; thousands groups or plain digits.
-const NUMERAL = /(?<![\w#.])-?(?:\d{1,3}(?:,\d{3})+(?!\d)|\d+)(?:\.\d+)?%?/g;
+// Not preceded by a word char or `#` (PR refs); thousands groups, plain digits
+// or a leading-dot decimal (`.85`, but not the last dot of an ellipsis).
+const NUMERAL =
+  /(?<![\w#])-?(?:(?:\d{1,3}(?:,\d{3})+(?!\d)|\d+)(?:\.\d+)?|(?<![.\d])\.\d+)%?/g;
 const ORDINAL_SUFFIX = /^(?:st|nd|rd|th)\b/i;
 
 /**
