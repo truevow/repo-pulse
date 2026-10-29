@@ -18,5 +18,5 @@
     "strictPropertyInitialization": false,
     "types": ["node", "jest"]
   },
-  "include": ["src", "test", "scripts", "jest.config.ts"]
+  "include": ["src", "test", "scripts", "eval", "jest.config.ts"]
 }

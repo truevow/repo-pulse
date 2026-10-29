@@ -9,11 +9,11 @@
   },
   "scripts": {
     "build": "nest build",
-    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\" \"eval/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main",
-    "lint": "eslint \"{src,test,scripts}/**/*.ts\" --max-warnings 0",
+    "lint": "eslint \"{src,test,scripts,eval}/**/*.ts\" --max-warnings 0",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "jest",
     "test:e2e": "jest --config test/jest-e2e.config.ts --runInBand",
@@ -22,7 +22,9 @@
     "db:studio": "prisma studio",
     "postinstall": "prisma generate",
     "db:seed": "tsx scripts/db-seed.ts",
-    "snapshot:export": "tsx scripts/snapshot-export.ts"
+    "snapshot:export": "tsx scripts/snapshot-export.ts",
+    "eval": "ts-node --transpile-only eval/run.ts",
+    "eval:detectors": "jest src/signals/detectors"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.3.0",
