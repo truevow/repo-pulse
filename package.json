@@ -22,6 +22,7 @@
     "db:studio": "prisma studio",
     "postinstall": "prisma generate",
     "db:seed": "tsx scripts/db-seed.ts",
+    "demo:seed": "tsx scripts/demo-seed.ts",
     "snapshot:export": "tsx scripts/snapshot-export.ts",
     "eval": "ts-node --transpile-only eval/run.ts",
     "eval:detectors": "jest src/signals/detectors"
