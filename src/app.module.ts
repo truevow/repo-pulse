@@ -7,6 +7,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { GithubModule } from './github/github.module';
 import { HealthController } from './health/health.controller';
 import { IngestionModule } from './ingestion/ingestion.module';
+import { SignalsModule } from './signals/signals.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { IngestionModule } from './ingestion/ingestion.module';
     PrismaModule,
     GithubModule,
     IngestionModule,
+    SignalsModule,
     LoggerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ENV],
