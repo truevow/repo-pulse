@@ -12,6 +12,6 @@ export default function globalSetup(): void {
   execSync('npx prisma migrate deploy', {
     cwd: resolve(__dirname, '../..'),
     env: { ...process.env, DATABASE_URL: url },
-    stdio: 'pipe',
+    stdio: ['ignore', 'pipe', 'inherit'],
   });
 }
